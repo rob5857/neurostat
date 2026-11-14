@@ -1,0 +1,1127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroStat — Stats Playground</title>
+<meta name="description" content="Aprende estadística manipulando experimentos simulados de neurociencia.">
+<style>
+:root{
+  color-scheme:light;
+  --page:#f6f6f3; --surface:#fcfcfb; --raised:#ffffff; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10); --wash:rgba(11,11,11,.045);
+  --c-ctrl:#2a78d6; --c-trt:#eb6834; --c-sig:#6250d6; --c-naive:#eda100; --c-animal:#1baf7a;
+  --good:#0ca30c; --good-ink:#006300; --bad:#d03b3b; --animal-l:.62;
+  --radius:14px; --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --page:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10); --wash:rgba(255,255,255,.06);
+    --c-ctrl:#3987e5; --c-trt:#d95926; --c-sig:#9085e9; --c-naive:#c98500; --c-animal:#199e70;
+    --good-ink:#0ca30c; --bad:#e66767; --animal-l:.72;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --page:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10); --wash:rgba(255,255,255,.06);
+  --c-ctrl:#3987e5; --c-trt:#d95926; --c-sig:#9085e9; --c-naive:#c98500; --c-animal:#199e70;
+  --good-ink:#0ca30c; --bad:#e66767; --animal-l:.72;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.5 var(--font)}
+button,input,select{font:inherit;color:inherit}
+h1,h2,h3,h4{margin:0;line-height:1.25;text-wrap:balance}
+p{margin:0 0 .7em} p:last-child{margin-bottom:0}
+a{color:inherit}
+.en{color:var(--ink2);font-style:italic}
+
+/* ---------- cabecera ---------- */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--page) 88%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.top-in{max-width:1240px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand svg{flex:none}
+.brand b{font-size:17px;letter-spacing:-.01em}
+.brand span{display:block;font-size:12px;color:var(--ink2);line-height:1.1}
+nav.tabs{display:flex;gap:2px;background:var(--wash);padding:3px;border-radius:999px}
+nav.tabs button{border:0;background:transparent;padding:7px 16px;border-radius:999px;cursor:pointer;font-weight:600;color:var(--ink2);white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--raised);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12),0 0 0 1px var(--border)}
+nav.tabs button .num{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--wash);font-size:11px;margin-right:6px}
+.icon-btn{border:1px solid var(--border);background:var(--raised);width:36px;height:36px;border-radius:50%;cursor:pointer;display:grid;place-items:center}
+@media (max-width:640px){
+  nav.tabs{order:3;width:100%} nav.tabs button{flex:1;padding:8px 6px}
+  nav.tabs button .num{display:none}
+}
+main{max-width:1240px;margin:0 auto;padding:18px 16px 60px}
+:focus-visible{outline:2px solid var(--c-ctrl);outline-offset:2px}
+
+/* ---------- piezas ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.card>h3{font-size:15px;margin-bottom:10px}
+.eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);font-weight:700}
+.btn{border:1px solid var(--border);background:var(--raised);padding:9px 14px;border-radius:10px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none}
+.btn:hover{background:var(--wash)}
+.btn.primary{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.btn.primary:hover{opacity:.88}
+.btn.small{padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{border:1px solid var(--border);background:var(--raised);padding:6px 12px;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink2)}
+.chip:hover{background:var(--wash)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.note{font-size:13.5px;color:var(--ink2)}
+.callout{border-left:3px solid var(--c-sig);background:var(--wash);padding:10px 12px;border-radius:0 10px 10px 0;font-size:14px}
+.callout b{color:var(--ink)}
+
+/* ---------- experimentar ---------- */
+.exp-head{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:12px}
+.modsw{display:flex;gap:2px;background:var(--wash);padding:3px;border-radius:12px}
+.modsw button{border:0;background:transparent;padding:8px 14px;border-radius:9px;cursor:pointer;font-weight:600;color:var(--ink2);text-align:left}
+.modsw button small{display:block;font-weight:400;font-size:12px}
+.modsw button[aria-selected="true"]{background:var(--raised);color:var(--ink);box-shadow:0 0 0 1px var(--border)}
+.scn-desc{margin:0 0 14px}
+.lab{display:grid;gap:14px;grid-template-columns:300px minmax(0,1fr);grid-template-areas:"controls stage" "controls results";align-items:start}
+.lab>.controls{grid-area:controls;position:sticky;top:76px}
+.lab>.stage{grid-area:stage}
+.lab>.results{grid-area:results;display:grid;gap:14px;min-width:0}
+@media (max-width:900px){
+  .lab{grid-template-columns:minmax(0,1fr);grid-template-areas:"stage" "controls" "results"}
+  .lab>.controls{position:static}
+}
+.stage h2{font-size:17px}
+.stage .sub{color:var(--ink2);font-size:13.5px;margin:2px 0 8px}
+.chart{width:100%;min-width:0}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--font);font-size:12px;fill:var(--ink2)}
+svg text.tk{font-size:11px;fill:var(--muted)}
+svg text.tb{fill:var(--ink);font-weight:600}
+svg text.cap{font-size:10.5px;letter-spacing:.08em;font-weight:700;fill:var(--ink2)}
+svg text.halo{paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink2);margin-top:8px}
+.legend i{display:inline-block;vertical-align:middle;margin-right:6px}
+.lg-dot{width:9px;height:9px;border-radius:50%}
+.lg-line{width:18px;height:0;border-top:2.5px solid}
+.lg-dash{width:18px;height:0;border-top:2px dashed}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.seed{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink2)}
+.seed input{width:84px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--raised)}
+
+.ctl{margin-bottom:14px}
+.ctl:last-child{margin-bottom:0}
+.ctl label{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:600}
+.ctl output{font-variant-numeric:tabular-nums;font-weight:700}
+.ctl input[type=range]{width:100%;accent-color:var(--ink);margin:6px 0 0;height:22px}
+.ctl .hint{font-size:12px;color:var(--ink2);margin-top:1px}
+.sw{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.seg{display:flex;gap:2px;background:var(--wash);padding:3px;border-radius:10px;margin-top:6px}
+.seg label{flex:1;display:block;text-align:center;padding:5px 2px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--raised);color:var(--ink);box-shadow:0 0 0 1px var(--border)}
+.seg label:has(input:focus-visible){outline:2px solid var(--c-ctrl)}
+.derived{border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--ink2)}
+.derived b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+.grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
+table.st{width:100%;border-collapse:collapse;font-size:13.5px}
+table.st th,table.st td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
+table.st th:first-child,table.st td:first-child{text-align:left}
+table.st thead th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);font-weight:700;vertical-align:bottom}
+table.st tr:last-child td{border-bottom:0}
+table.st td small{color:var(--ink2);display:block;font-size:12px;white-space:nowrap}
+.tablewrap{overflow-x:auto}
+.verdict{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.bigp{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.bigp small{font-size:13px;font-weight:600;color:var(--ink2);letter-spacing:0;display:block;margin-bottom:4px}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 11px;font-size:13px;font-weight:700;border:1px solid var(--border);background:var(--raised)}
+.badge::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--axis)}
+.badge.sig::before{background:var(--c-sig)}
+.kv{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--ink2);margin-top:10px}
+.kv b{color:var(--ink);font-variant-numeric:tabular-nums}
+details.how{margin-top:12px;font-size:13.5px}
+details.how summary{cursor:pointer;font-weight:600}
+details.how .f{background:var(--wash);border-radius:10px;padding:10px 12px;margin-top:8px;overflow-x:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+details.how .f div+div{margin-top:6px}
+.simhead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.hero{font-size:40px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.hero-l{font-size:13px;font-weight:700;color:var(--ink2)}
+.waffle{display:grid;grid-template-columns:repeat(50,1fr);gap:2px;margin:12px 0 6px;container-type:inline-size}
+.simbox{container-type:inline-size}
+@container (max-width:520px){.waffle{grid-template-columns:repeat(25,1fr)}}
+.waffle i{aspect-ratio:1;border-radius:2px;background:var(--grid)}
+.waffle i.s{background:var(--c-sig)}
+.empty{border:1px dashed var(--axis);border-radius:12px;padding:18px;text-align:center;color:var(--ink2);font-size:14px}
+.hb{margin:10px 0}
+.hb .hl{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;font-weight:600;flex-wrap:wrap}
+.hb .hl span:last-child{font-variant-numeric:tabular-nums}
+.hb .track{position:relative;height:16px;background:var(--wash);border-radius:4px;margin-top:5px}
+.hb .fill{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;min-width:2px}
+.hb .ci{position:absolute;top:50%;height:2px;background:var(--ink);transform:translateY(-50%)}
+.hb .ci::before,.hb .ci::after{content:"";position:absolute;top:-4px;width:2px;height:10px;background:var(--ink)}
+.hb .ci::before{left:0}.hb .ci::after{right:0}
+.hb .ref{position:absolute;top:-4px;bottom:-4px;border-left:2px dashed var(--ink2)}
+.reading{font-size:14px}
+.reading p{margin-bottom:.55em}
+#tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--page);font-size:12.5px;padding:5px 9px;border-radius:7px;max-width:240px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+
+/* ---------- aprender / interpretar ---------- */
+.intro{max-width:780px;margin-bottom:18px}
+.intro h1{font-size:clamp(24px,4vw,34px);letter-spacing:-.02em;margin-bottom:8px}
+.intro p{color:var(--ink2);font-size:16px}
+.cards{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.lcard{display:flex;flex-direction:column;gap:8px}
+.lcard h3{font-size:17px;margin:0}
+.lcard p,.lcard li{font-size:14.5px}
+.lcard ul{margin:0;padding-left:18px}
+.lcard .formula{background:var(--wash);border-radius:10px;padding:9px 12px;font-size:14px;overflow-x:auto;white-space:nowrap}
+.lcard .foot{margin-top:auto;padding-top:6px}
+.assume{font-size:13.5px;color:var(--ink2)}
+.assume b{color:var(--ink)}
+.sect{margin-top:30px}
+.sect>h2{font-size:20px;margin-bottom:4px}
+.sect>p.lead{color:var(--ink2);margin-bottom:14px;max-width:760px}
+.reto .opts{display:grid;gap:6px;margin:10px 0}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);background:var(--raised);border-radius:10px;padding:9px 12px;cursor:pointer;text-align:left;width:100%}
+.opt:hover{background:var(--wash)}
+.opt[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.opt.ok{border-color:var(--good);box-shadow:inset 0 0 0 1px var(--good)}
+.opt.ko{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+.opt .mk{flex:none;width:20px;font-weight:700}
+.fb{margin-top:10px;font-size:14px;border-radius:10px;background:var(--wash);padding:11px 13px}
+.fb .res{font-weight:700;margin-bottom:6px;display:flex;gap:6px;align-items:center}
+.fb .res.ok{color:var(--good-ink)} .fb .res.ko{color:var(--bad)}
+.fb .nums{font-variant-numeric:tabular-nums;margin:6px 0}
+.tf{display:flex;gap:8px;margin-top:8px}
+footer{max-width:1240px;margin:0 auto;padding:0 16px 40px;color:var(--ink2);font-size:13px}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.18s}
+@media (prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+        <rect width="34" height="34" rx="9" fill="var(--ink)"/>
+        <path d="M4 25c5 0 6-15 10.5-15S20 25 25 25" fill="none" stroke="var(--c-ctrl)" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M10 25c5 0 6-15 10.5-15S26 25 31 25" fill="none" stroke="var(--c-trt)" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <div><b>NeuroStat</b><span>Stats Playground</span></div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Espacios">
+      <button role="tab" data-tab="aprender" aria-selected="false"><span class="num">1</span>Aprender</button>
+      <button role="tab" data-tab="experimentar" aria-selected="true"><span class="num">2</span>Experimentar</button>
+      <button role="tab" data-tab="interpretar" aria-selected="false"><span class="num">3</span>Interpretar</button>
+    </nav>
+    <button class="icon-btn" id="themeBtn" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema claro/oscuro">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<!-- ======================= APRENDER ======================= -->
+<section id="view-aprender" hidden>
+  <div class="intro">
+    <h1>Aprende estadística moviendo los controles de un experimento</h1>
+    <p>Aquí tú decides la verdad —cuánto difieren realmente dos poblaciones— y luego observas qué alcanza a ver un laboratorio con una muestra limitada. Lee una idea, pruébala en el simulador y vuelve para interpretarla.</p>
+  </div>
+  <div class="cards">
+    <article class="card lcard">
+      <span class="eyebrow">Idea 1</span>
+      <h3>Población y muestra</h3>
+      <p>Los <b>parámetros</b> (μ, σ) describen a toda la población y casi nunca se conocen. Con una <b>muestra</b> calculamos <b>estimaciones</b> (x̄, s) que cambian cada vez que repetimos el experimento.</p>
+      <p>En el simulador las curvas y las líneas punteadas son los parámetros; los puntos y las barras sólidas son lo único que vería un laboratorio.</p>
+      <div class="foot"><button class="btn small" data-go="1:base">Verlo en el simulador →</button></div>
+    </article>
+    <article class="card lcard">
+      <span class="eyebrow">Idea 2</span>
+      <h3>Prueba t de Welch <span class="en">(Welch's t-test)</span></h3>
+      <p>Compara dos medias sin exigir que ambas poblaciones tengan la misma varianza. Mide cuántos errores estándar separan a las medias observadas:</p>
+      <div class="formula">t = (x̄<sub>T</sub> − x̄<sub>C</sub>) / √(s²<sub>C</sub>/n<sub>C</sub> + s²<sub>T</sub>/n<sub>T</sub>)</div>
+      <p class="assume"><b>Supuestos:</b> observaciones independientes entre sí; cada grupo proviene de una población aproximadamente normal (o n grande); la unidad que se cuenta en n es la unidad que recibió el tratamiento.</p>
+      <div class="foot"><button class="btn small" data-go="1:ruido">Probar con mucho ruido →</button></div>
+    </article>
+    <article class="card lcard">
+      <span class="eyebrow">Idea 3</span>
+      <h3>Qué es (y qué no es) el valor p <span class="en">(p-value)</span></h3>
+      <p>Es la probabilidad de obtener una diferencia tan extrema como la observada, o más, <b>si la hipótesis nula fuera cierta</b> y se cumplieran los supuestos.</p>
+      <ul>
+        <li><b>No</b> es la probabilidad de que la hipótesis nula sea verdadera.</li>
+        <li>p ≥ α <b>no demuestra</b> que no haya efecto: quizá faltó potencia.</li>
+        <li>p &lt; α <b>no dice</b> que el efecto sea grande ni importante.</li>
+      </ul>
+      <div class="foot"><button class="btn small" data-go="1:nulo">Simular sin efecto real →</button></div>
+    </article>
+    <article class="card lcard">
+      <span class="eyebrow">Idea 4</span>
+      <h3>Intervalo de confianza del 95 % <span class="en">(confidence interval)</span></h3>
+      <p>Rango de diferencias compatibles con los datos. El «95 %» describe al procedimiento: si repitieras el experimento muchas veces, cerca del 95 % de los intervalos así construidos contendrían la diferencia real.</p>
+      <p>Un intervalo ancho avisa de que la muestra dice poco, aunque p sea pequeño o grande.</p>
+      <div class="foot"><button class="btn small" data-go="1:pocos">Probar con pocos animales →</button></div>
+    </article>
+    <article class="card lcard">
+      <span class="eyebrow">Idea 5</span>
+      <h3>Tamaño del efecto <span class="en">(effect size)</span></h3>
+      <p>La <b>d de Cohen</b> expresa la diferencia en unidades de desviación estándar: d = (x̄<sub>T</sub> − x̄<sub>C</sub>) / s<sub>combinada</sub>. La <b>g de Hedges</b> corrige su sesgo en muestras pequeñas.</p>
+      <p>Significación estadística no implica importancia biológica: con una muestra enorme, una diferencia minúscula produce p muy pequeños. Si importa o no lo decide la biología, no el valor p.</p>
+      <div class="foot"><button class="btn small" data-go="1:pequeno">Efecto pequeño, muestra grande →</button></div>
+    </article>
+    <article class="card lcard">
+      <span class="eyebrow">Idea 6</span>
+      <h3>Potencia y errores <span class="en">(power, type I / II errors)</span></h3>
+      <p><b>Potencia:</b> probabilidad de obtener p &lt; α cuando el efecto existe. Aumenta con n y con el efecto; disminuye con la variabilidad.</p>
+      <p><b>Error tipo I</b> (falso positivo): p &lt; α sin efecto real; ocurre con frecuencia α. <b>Error tipo II</b> (falso negativo): p ≥ α aunque el efecto exista; ocurre con frecuencia 1 − potencia.</p>
+      <div class="foot"><button class="btn small" data-go="1:base:sim">Repetir 500 experimentos →</button></div>
+    </article>
+    <article class="card lcard">
+      <span class="eyebrow">Idea 7</span>
+      <h3>Pseudorreplicación <span class="en">(pseudoreplication)</span></h3>
+      <p>Las neuronas de un mismo animal se parecen entre sí: comparten genética, cirugía, expresión del indicador y día de registro. No son observaciones independientes.</p>
+      <p>Si el tratamiento se asigna a animales, la unidad experimental es el animal. Tratar cada neurona como independiente infla n, encoge el error estándar y dispara los falsos positivos.</p>
+      <div class="formula">ICC = σ²<sub>entre</sub> / (σ²<sub>entre</sub> + σ²<sub>dentro</sub>)</div>
+      <div class="foot"><button class="btn small" data-go="2:nulo:sim">Ver los falsos positivos →</button></div>
+    </article>
+    <article class="card lcard">
+      <span class="eyebrow">Métodos</span>
+      <h3>Modelo, supuestos y verificación</h3>
+      <ul>
+        <li><b>Módulo 1:</b> cada animal aporta un valor; control ~ Normal(20, σ<sub>C</sub>), tratamiento ~ Normal(20 + δ, σ<sub>T</sub>); grupos independientes y de igual tamaño.</li>
+        <li><b>Módulo 2:</b> respuesta = media del grupo + efecto del animal ~ Normal(0, σ<sub>entre</sub>) + ruido de la neurona ~ Normal(0, σ<sub>dentro</sub>); diseño equilibrado, tratamiento asignado por animal. En este diseño, la prueba t sobre las medias por animal es un análisis válido.</li>
+        <li><b>Azar reproducible:</b> generador Mulberry32 con semilla visible y normales por Box–Muller. Misma semilla y mismos controles → mismos datos.</li>
+        <li><b>Aproximaciones:</b> los grados de libertad de Welch–Satterthwaite son una aproximación propia de la prueba; el valor p se calcula con la función beta incompleta (fracción continua, tolerancia 10⁻¹⁵); la potencia es una estimación de Monte Carlo con su propio error.</li>
+        <li>Los valores ΔF/F son ilustrativos, no datos reales.</li>
+      </ul>
+      <div class="foot"><div id="selftest" class="note">Comprobando contra SciPy…</div></div>
+    </article>
+  </div>
+</section>
+
+<!-- ======================= EXPERIMENTAR ======================= -->
+<section id="view-experimentar">
+  <div class="exp-head">
+    <div class="modsw" role="tablist" aria-label="Módulo">
+      <button role="tab" data-mod="1" aria-selected="true">Comparar dos grupos<small>Módulo 1</small></button>
+      <button role="tab" data-mod="2" aria-selected="false">Pseudorreplicación<small>Módulo 2</small></button>
+    </div>
+    <div class="chips" id="scenarios" aria-label="Escenarios predefinidos">
+      <span class="eyebrow">Escenarios</span>
+      <button class="chip" data-scn="base">Inicial</button>
+      <button class="chip" data-scn="ruido">Mucho ruido</button>
+      <button class="chip" data-scn="pocos">Pocos animales</button>
+      <button class="chip" data-scn="pequeno">Efecto pequeño con muestra grande</button>
+      <button class="chip" data-scn="nulo">Sin efecto real</button>
+    </div>
+  </div>
+  <p class="note scn-desc" id="scnDesc"></p>
+
+  <!-- ---- Módulo 1 ---- -->
+  <div class="lab" id="mod1">
+    <aside class="card controls" aria-label="Controles del módulo 1">
+      <h3>Parámetros reales <span class="en">(los fijas tú)</span></h3>
+      <div id="ctl1"></div>
+      <div class="derived" id="derived1"></div>
+    </aside>
+    <div class="card stage">
+      <h2>Respuesta neuronal promedio por animal</h2>
+      <p class="sub">Arriba, las poblaciones que nadie ve. Abajo, la muestra que obtuvo el laboratorio.</p>
+      <div class="chart" id="chart1"></div>
+      <div class="legend">
+        <span><i class="lg-line" style="border-color:var(--ink2)"></i>curva: población</span>
+        <span><i class="lg-dash" style="border-color:var(--ink2)"></i>media real μ (parámetro)</span>
+        <span><i class="lg-dot" style="background:var(--ink2)"></i>un animal</span>
+        <span><i class="lg-line" style="border-color:var(--ink)"></i>media observada x̄ ± s (estimación)</span>
+      </div>
+      <div class="actions">
+        <button class="btn primary" data-act="resample">Obtener otra muestra</button>
+        <button class="btn" data-act="sim">Repetir 500 experimentos</button>
+        <label class="seed">Semilla <span class="en">(seed)</span> <input type="number" min="1" max="999999" data-seed></label>
+      </div>
+    </div>
+    <div class="results">
+      <div class="grid2">
+        <div class="card">
+          <h3>Diferencia entre medias (tratamiento − control)</h3>
+          <div class="chart" id="diff1"></div>
+          <div class="tablewrap"><table class="st" id="table1"></table></div>
+        </div>
+        <div class="card">
+          <h3>Prueba t de Welch bilateral <span class="en">(two-sided)</span></h3>
+          <div id="test1"></div>
+        </div>
+      </div>
+      <div class="card simbox">
+        <div class="simhead">
+          <h3 style="margin:0">¿Y si repitieras el experimento 500 veces?</h3>
+          <button class="btn small" data-act="sim">Repetir 500 experimentos</button>
+        </div>
+        <div id="sim1"></div>
+      </div>
+      <div class="card reading">
+        <h3>Lectura rápida</h3>
+        <div id="read1"></div>
+        <p style="margin-top:10px"><button class="btn small" data-tabgo="interpretar">Interpretar este resultado →</button></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Módulo 2 ---- -->
+  <div class="lab" id="mod2" hidden>
+    <aside class="card controls" aria-label="Controles del módulo 2">
+      <h3>Parámetros reales <span class="en">(los fijas tú)</span></h3>
+      <div id="ctl2"></div>
+      <div class="derived" id="derived2"></div>
+    </aside>
+    <div class="card stage">
+      <h2>Neuronas agrupadas dentro de animales</h2>
+      <p class="sub">Cada columna es un animal; cada punto, una neurona. El tratamiento se asignó al animal completo.</p>
+      <div class="chart" id="chart2"></div>
+      <div class="legend">
+        <span><i class="lg-dot" style="background:var(--ink2)"></i>una neurona (color = animal)</span>
+        <span><i class="lg-line" style="border-color:var(--ink);border-top-width:3.5px"></i>media del animal</span>
+        <span><i class="lg-line" style="border-color:var(--c-ctrl)"></i><i class="lg-line" style="border-color:var(--c-trt)"></i>media observada del grupo</span>
+        <span><i class="lg-dash" style="border-color:var(--ink2)"></i>media real del grupo (parámetro)</span>
+      </div>
+      <div class="actions">
+        <button class="btn primary" data-act="resample">Obtener otra muestra</button>
+        <button class="btn" data-act="sim">Repetir 500 experimentos</button>
+        <label class="seed">Semilla <span class="en">(seed)</span> <input type="number" min="1" max="999999" data-seed></label>
+      </div>
+    </div>
+    <div class="results">
+      <div class="grid2">
+        <div class="card">
+          <h3>Los mismos datos, dos análisis</h3>
+          <div class="chart" id="diff2"></div>
+          <p class="note" style="margin-top:6px">Ambos estiman la misma diferencia; cambia cuánta certeza dicen tener.</p>
+        </div>
+        <div class="card">
+          <h3>Comparación de resultados</h3>
+          <div class="tablewrap"><table class="st" id="table2"></table></div>
+        </div>
+      </div>
+      <div class="card simbox">
+        <div class="simhead">
+          <h3 style="margin:0">¿Cuántas veces daría «significativo» cada análisis?</h3>
+          <button class="btn small" data-act="sim">Repetir 500 experimentos</button>
+        </div>
+        <div id="sim2"></div>
+      </div>
+      <div class="card reading">
+        <h3>Lectura rápida</h3>
+        <div id="read2"></div>
+        <p style="margin-top:10px"><button class="btn small" data-tabgo="interpretar">Interpretar este resultado →</button></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= INTERPRETAR ======================= -->
+<section id="view-interpretar" hidden>
+  <div class="intro">
+    <h1>Del número a la conclusión</h1>
+    <p>Un resultado estadístico solo significa algo junto al diseño que lo produjo. Aquí se lee tu experimento actual, se ponen a prueba tus predicciones y se revisan las interpretaciones más comunes.</p>
+  </div>
+  <div class="card reading" id="fullReading"></div>
+
+  <div class="sect">
+    <h2>Retos: predice antes de simular</h2>
+    <p class="lead">Elige tu predicción y después corre la simulación. Cada reto ejecuta 2 000 experimentos reales por condición con semilla fija, así que el resultado es reproducible.</p>
+    <div class="cards" id="retos"></div>
+  </div>
+
+  <div class="sect">
+    <h2>¿Verdadero o falso?</h2>
+    <p class="lead">Afirmaciones que aparecen en seminarios y artículos. Decide antes de ver la explicación.</p>
+    <div class="cards" id="quiz"></div>
+  </div>
+</section>
+</main>
+<footer>NeuroStat — Stats Playground · demo educativa. Los datos son simulados; los cálculos se comprueban al abrir la página contra valores de referencia de SciPy (ver «Aprender → Métodos»).</footer>
+<div id="tip" hidden></div>
+
+<!-- ============ NÚCLEO ESTADÍSTICO (sin dependencias, verificable) ============ -->
+<script id="ns-core">
+const NS = (() => {
+  'use strict';
+  /* ---- azar reproducible ---- */
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // Combina semilla y número de flujo en una semilla nueva (mezcla tipo murmur3).
+  function mixSeed(seed, stream) {
+    let h = (seed >>> 0) ^ Math.imul((stream >>> 0) + 1, 0x9E3779B1);
+    h = Math.imul(h ^ (h >>> 16), 0x85EBCA6B);
+    h = Math.imul(h ^ (h >>> 13), 0xC2B2AE35);
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+  // Normales estándar por Box–Muller (transformación exacta de dos uniformes).
+  function normalStream(seed) {
+    const rng = mulberry32(seed);
+    let spare = null;
+    return function () {
+      if (spare !== null) { const s = spare; spare = null; return s; }
+      let u = 0; while (u === 0) u = rng();
+      const v = rng(), r = Math.sqrt(-2 * Math.log(u));
+      spare = r * Math.sin(2 * Math.PI * v);
+      return r * Math.cos(2 * Math.PI * v);
+    };
+  }
+  /* ---- funciones especiales ---- */
+  const LG = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+    -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  function logGamma(x) { // Lanczos (g = 7, n = 9)
+    if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
+    x -= 1;
+    let a = LG[0];
+    const t = x + 7.5;
+    for (let i = 1; i < 9; i++) a += LG[i] / (x + i);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+  function betacf(a, b, x) { // fracción continua (Lentz modificado)
+    const FPMIN = 1e-300, EPS = 1e-15;
+    const qab = a + b, qap = a + 1, qam = a - 1;
+    let c = 1, d = 1 - qab * x / qap;
+    if (Math.abs(d) < FPMIN) d = FPMIN;
+    d = 1 / d;
+    let h = d;
+    for (let m = 1; m <= 1000; m++) {
+      const m2 = 2 * m;
+      let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+      c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+      d = 1 / d; h *= d * c;
+      aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+      c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+      d = 1 / d;
+      const del = d * c; h *= del;
+      if (Math.abs(del - 1) < EPS) break;
+    }
+    return h;
+  }
+  function ibeta(a, b, x) { // beta incompleta regularizada I_x(a, b)
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    const bt = Math.exp(logGamma(a + b) - logGamma(a) - logGamma(b) + a * Math.log(x) + b * Math.log1p(-x));
+    return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b;
+  }
+  // Valor p bilateral de la t de Student: P(|T| >= |t|) con df grados de libertad.
+  function tTwoSidedP(t, df) { return ibeta(df / 2, 0.5, df / (df + t * t)); }
+  // Cuantil crítico bilateral: t tal que P(|T| >= t) = alpha (bisección).
+  function tCritical(alpha, df) {
+    let lo = 0, hi = 1;
+    while (tTwoSidedP(hi, df) > alpha) hi *= 2;
+    for (let i = 0; i < 100; i++) {
+      const mid = (lo + hi) / 2;
+      if (tTwoSidedP(mid, df) > alpha) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+  /* ---- estadística descriptiva e inferencia ---- */
+  function summary(x) {
+    const n = x.length;
+    let s = 0; for (let i = 0; i < n; i++) s += x[i];
+    const mean = s / n;
+    let ss = 0; for (let i = 0; i < n; i++) ss += (x[i] - mean) * (x[i] - mean);
+    const v = ss / (n - 1);
+    return { n, mean, var: v, sd: Math.sqrt(v) };
+  }
+  // Welch a partir de resúmenes; diferencia = grupo 2 − grupo 1 (tratamiento − control).
+  function welchFromSummary(n1, m1, v1, n2, m2, v2, withCI) {
+    const a = v1 / n1, b = v2 / n2, se = Math.sqrt(a + b), diff = m2 - m1;
+    const t = diff / se;
+    const df = (a + b) * (a + b) / (a * a / (n1 - 1) + b * b / (n2 - 1));
+    const p = tTwoSidedP(t, df);
+    const r = { n1, n2, m1, m2, v1, v2, s1: Math.sqrt(v1), s2: Math.sqrt(v2), diff, se, t, df, p };
+    if (withCI !== false) { r.tcrit = tCritical(0.05, df); r.lo = diff - r.tcrit * se; r.hi = diff + r.tcrit * se; }
+    return r;
+  }
+  function welch(x1, x2) {
+    const a = summary(x1), b = summary(x2);
+    return welchFromSummary(a.n, a.mean, a.var, b.n, b.mean, b.var, true);
+  }
+  // Factor exacto de corrección de Hedges: J(v) = Γ(v/2) / (√(v/2) Γ((v−1)/2)).
+  function hedgesJ(v) { return Math.exp(logGamma(v / 2) - logGamma((v - 1) / 2)) / Math.sqrt(v / 2); }
+  function effectSize(w) {
+    const v = w.n1 + w.n2 - 2;
+    const sp = Math.sqrt(((w.n1 - 1) * w.v1 + (w.n2 - 1) * w.v2) / v);
+    const d = w.diff / sp, J = hedgesJ(v);
+    return { sp, d, J, g: J * d, v };
+  }
+  // Intervalo de Wilson al 95 % para una proporción k/n.
+  function wilson(k, n) {
+    const z = 1.959963984540054, ph = k / n, z2 = z * z;
+    const c = (ph + z2 / (2 * n)) / (1 + z2 / n);
+    const h = z * Math.sqrt(ph * (1 - ph) / n + z2 / (4 * n * n)) / (1 + z2 / n);
+    return { p: ph, lo: Math.max(0, c - h), hi: Math.min(1, c + h) };
+  }
+  /* ---- módulo 1: dos grupos independientes ---- */
+  function sampleTwoGroups(seed, P) {
+    const zc = normalStream(mixSeed(seed, 1)), zt = normalStream(mixSeed(seed, 2));
+    const c = new Array(P.n), t = new Array(P.n);
+    for (let i = 0; i < P.n; i++) { c[i] = P.muC + P.sdC * zc(); t[i] = P.muC + P.delta + P.sdT * zt(); }
+    return { c, t };
+  }
+  function simulateTwoGroups(seed, batch, P, reps) {
+    const z = normalStream(mixSeed(seed, 1000 + batch));
+    const p = new Float64Array(reps), diff = new Float64Array(reps), n = P.n;
+    for (let r = 0; r < reps; r++) {
+      let s1 = 0, q1 = 0, s2 = 0, q2 = 0;
+      for (let i = 0; i < n; i++) { const x = P.sdC * z(); s1 += x; q1 += x * x; }
+      for (let i = 0; i < n; i++) { const x = P.delta + P.sdT * z(); s2 += x; q2 += x * x; }
+      const m1 = s1 / n, m2 = s2 / n;
+      const w = welchFromSummary(n, m1, (q1 - n * m1 * m1) / (n - 1), n, m2, (q2 - n * m2 * m2) / (n - 1), false);
+      p[r] = w.p; diff[r] = w.diff;
+    }
+    return { p, diff };
+  }
+  /* ---- módulo 2: neuronas anidadas en animales ---- */
+  function sampleNested(seed, P) {
+    const groups = [];
+    for (let g = 0; g < 2; g++) {
+      const mu = P.muC + (g ? P.effect : 0), animals = [];
+      for (let j = 0; j < P.k; j++) {
+        const z = normalStream(mixSeed(seed, 10 + g * 100 + j));
+        const a = P.sdB * z(), values = new Array(P.m);
+        for (let i = 0; i < P.m; i++) values[i] = mu + a + P.sdW * z();
+        animals.push({ a, values, mean: summary(values).mean });
+      }
+      groups.push(animals);
+    }
+    return groups;
+  }
+  function analyzeNested(groups) {
+    const flat = g => [].concat(...g.map(a => a.values)), means = g => g.map(a => a.mean);
+    return { naive: welch(flat(groups[0]), flat(groups[1])), animal: welch(means(groups[0]), means(groups[1])) };
+  }
+  function simulateNested(seed, batch, P, reps) {
+    const z = normalStream(mixSeed(seed, 2000 + batch));
+    const pN = new Float64Array(reps), pA = new Float64Array(reps), { k, m } = P, N = k * m;
+    const S = [0, 0], Q = [0, 0], MS = [0, 0], MQ = [0, 0];
+    for (let r = 0; r < reps; r++) {
+      for (let g = 0; g < 2; g++) {
+        let s = 0, q = 0, ms = 0, mq = 0;
+        const mu = g ? P.effect : 0;
+        for (let j = 0; j < k; j++) {
+          const base = mu + P.sdB * z();
+          let as = 0;
+          for (let i = 0; i < m; i++) { const x = base + P.sdW * z(); as += x; q += x * x; }
+          s += as; const am = as / m; ms += am; mq += am * am;
+        }
+        S[g] = s; Q[g] = q; MS[g] = ms; MQ[g] = mq;
+      }
+      const v = (s, q, n) => (q - s * s / n) / (n - 1);
+      pN[r] = welchFromSummary(N, S[0] / N, v(S[0], Q[0], N), N, S[1] / N, v(S[1], Q[1], N), false).p;
+      pA[r] = welchFromSummary(k, MS[0] / k, v(MS[0], MQ[0], k), k, MS[1] / k, v(MS[1], MQ[1], k), false).p;
+    }
+    return { pN, pA };
+  }
+  /* ---- autocomprobación contra valores de referencia (SciPy) ---- */
+  function selfTest(ref) {
+    const rows = [], rel = (a, b) => Math.abs(a - b) / Math.max(Math.abs(b), 1e-300);
+    for (const c of ref.welch) {
+      const w = welch(c.a, c.b);
+      for (const [q, ours, theirs] of [['t', w.t, c.t], ['gl', w.df, c.df], ['p', w.p, c.p], ['IC inf.', w.lo, c.lo], ['IC sup.', w.hi, c.hi]])
+        rows.push({ caso: c.caso, q, ours, ref: theirs, err: rel(ours, theirs) });
+    }
+    for (const c of ref.tq) rows.push({ caso: 't crítico, gl=' + c.df, q: 't₀.₉₇₅', ours: tCritical(0.05, c.df), ref: c.q, err: rel(tCritical(0.05, c.df), c.q) });
+    for (const c of ref.p2) rows.push({ caso: 't=' + c.t + ', gl=' + c.df, q: 'p', ours: tTwoSidedP(c.t, c.df), ref: c.p, err: rel(tTwoSidedP(c.t, c.df), c.p) });
+    for (const c of ref.J) rows.push({ caso: 'Hedges J, ν=' + c.df, q: 'J', ours: hedgesJ(c.df), ref: c.J, err: rel(hedgesJ(c.df), c.J) });
+    return { rows, maxErr: Math.max(...rows.map(r => r.err)) };
+  }
+  return { mulberry32, mixSeed, normalStream, logGamma, ibeta, tTwoSidedP, tCritical, summary, welch, welchFromSummary,
+    hedgesJ, effectSize, wilson, sampleTwoGroups, simulateTwoGroups, sampleNested, analyzeNested, simulateNested, selfTest };
+})();
+if (typeof module !== 'undefined') module.exports = NS;
+</script>
+<script id="ns-ref" type="application/json">{"scipy": "1.17.1", "numpy": "2.4.6", "welch": [{"caso": "A_n5_n6", "a": [18.2, 22.1, 19.5, 24.3, 17.8], "b": [25.1, 30.2, 21.7, 28.4, 35.0, 26.3], "t": 3.305692783218276, "df": 8.335331667476302, "p": 0.010166742335996563, "lo": 2.27481570903913, "hi": 12.531850957627542}, {"caso": "B_n3_n3", "a": [20.1, 19.4, 22.3], "b": [24.8, 21.0, 29.9], "t": 1.7019699319245953, "df": 2.453324336669272, "p": 0.2072445004273722, "lo": -5.231827974288761, "hi": 14.498494640955427}, {"caso": "C_n40_n60", "a": [20.0, 25.258324052262342, 19.322294489865847, 16.270926588361338, 23.67056675569304, 25.49243556311745, 18.30062656203229, 16.90931443881483, 24.59580907428248, 22.58370286565307, 16.093012540602214, 20.455004870929006, 26.498964500713345, 21.25681702287962, 15.141007771280684, 22.095291770110844, 24.996365308253623, 17.97181330012851, 17.55819616084202, 25.366639447831105, 24.44541343060012, 15.451666640832375, 18.82664199249871, 25.528001493953166, 21.103466286749324, 16.21956748440203, 22.579936330941084, 26.50214481473503, 17.70837272754117, 16.188382299332545, 23.951145879216874, 24.148064308431003, 17.011863714264862, 19.33117229512158, 26.547019303433505, 20.94557310175446, 15.309316920336485, 20.940470973422492, 25.802947458877668, 19.596093454784274], "b": [27.0, 24.929659809623985, 20.036787431841475, 16.175567147897635, 16.419449501995118, 19.73522520341532, 25.008157255655806, 27.39915181830049, 25.25010788719353, 20.338735077585255, 15.533218428691939, 15.864853084247834, 20.23402056126799, 25.485578031923264, 27.796607513006027, 24.56952397985935, 19.641095862717464, 15.89241531751424, 16.311765057826594, 20.733145573261307, 24.96190024946448, 27.192367803461007, 24.887930870886613, 19.9438973925032, 16.25316935051527, 15.760172159438905, 20.232572214054887, 25.43710232991008, 27.586433888346782, 25.205351628869263, 19.247167147596983, 15.61549162359869, 16.210060703078867, 20.732272373029662, 25.911163011583923, 26.97880744534275, 24.521809601207927, 19.550932476273317, 15.979392789283983, 16.661416583896568, 20.232217862235572, 25.384061355514373, 27.369490630652038, 24.837328407508895, 19.855220586694617, 15.344883053694701, 16.114225282185902, 20.73238042436099, 25.855776751354398, 27.758486078391893, 24.15193193290638, 19.160058539218568, 15.711972173672887, 16.56847186748975, 21.2327317407218, 25.326288923208494, 27.145796899848925, 24.465644321309295, 19.465473238747517, 16.080669454020615], "t": 0.5998767732321169, "df": 91.21975824149642, "p": 0.5500756176609188, "lo": -1.1192386494235127, "hi": 2.087772806676239}, {"caso": "D_p_diminuto", "a": [10.0, 10.841470984807897, 10.909297426825681, 10.141120008059866, 9.243197504692072, 9.041075725336862, 9.720584501801074, 10.656986598718788, 10.989358246623382, 10.412118485241757, 9.45597888911063, 9.000009793449296, 9.463427081999566, 10.42016703682664, 10.99060735569487, 10.650287840157116, 9.712096683334934, 9.038602508120443, 9.249012753228325, 10.149877209662952, 10.912945250727628, 10.836655638536056, 9.991148690709597, 9.15377959582483, 9.094421637993376], "b": [15.0, 14.267498828624587, 13.143111246631053, 13.274067695799861, 14.468516671300376, 14.976587625728023, 14.053955420562648, 13.052278397868887, 13.43901574257277, 14.647596338653877, 14.907446781450195, 13.837885563500281, 13.005822374816185, 13.63023173613683, 14.796352470291923, 14.795814969813945, 13.62940667416236, 13.005918469070739, 13.838762035675815, 14.907819597756195, 14.64691932232864, 13.43828072411885, 13.052562181043243, 14.054842262350018, 14.976778300832262], "t": 19.57115299167283, "df": 47.98895527346777, "p": 1.6158428628857147e-24, "lo": 3.6168113028518905, "hi": 4.4450482158365885}, {"caso": "E_casi_nulo", "a": [5.1, 4.9, 5.6, 5.8, 6.0, 4.7, 5.3], "b": [5.2, 5.0, 5.5, 5.9, 5.7, 4.8, 5.4, 5.1], "t": -0.07998549727795226, "df": 11.254692590143136, "p": 0.9376533652351563, "lo": -0.5078842570165698, "hi": 0.47216997130228505}], "tq": [{"df": 1, "q": 12.706204736174694}, {"df": 2.5, "q": 3.5746548420036817}, {"df": 4.37, "q": 2.6861481000408847}, {"df": 10, "q": 2.2281388519862744}, {"df": 30.2, "q": 2.0417054550397276}, {"df": 100, "q": 1.9839715185235518}, {"df": 598, "q": 1.963938898055503}], "p2": [{"t": 2.0, "df": 5, "p": 0.10193947882985835}, {"t": 0.5, "df": 3.3, "p": 0.6485350763995584}, {"t": 4.5, "df": 12.7, "p": 0.0006322989077742534}, {"t": 10, "df": 40, "p": 1.931311700411549e-12}, {"t": 1.96, "df": 1000, "p": 0.050273184955748736}, {"t": 25, "df": 8, "p": 7.011493713319877e-09}], "J": [{"df": 4, "J": 0.7978845608028653}, {"df": 18, "J": 0.9576464270237195}, {"df": 58, "J": 0.9870035810279977}, {"df": 598, "J": 0.9987452073592535}]}</script>
+
+<!-- ============ APLICACIÓN ============ -->
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const MU = 20, REPS = 500;
+const fx = (x, d = 2) => (Object.is(+x.toFixed(d), -0) ? 0 : x).toFixed(d).replace('-', '−');
+const fp = p => p < 1e-4 ? '< 0.0001' : p < 0.01 ? p.toFixed(4) : p.toFixed(3);
+const pEq = p => (p < 1e-4 ? 'p ' : 'p = ') + fp(p);
+const pct = (x, d = 1) => (100 * x).toFixed(d) + ' %';
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+/* ---------------- estado ---------------- */
+const NVALS = [3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30, 40, 50, 60, 80, 100, 150, 200, 300];
+const SCN = {
+  base:    { m1: { n: 10, delta: 4, sdC: 5, sdT: 5 },   m2: { k: 4, m: 20, sdB: 4, sdW: 5, effect: 0 },
+             d: ['Punto de partida: un efecto real moderado con 10 animales por grupo. Mueve un control y observa qué cambia.',
+                 'Punto de partida: 4 animales por grupo, 20 neuronas cada uno y ningún efecto real. Compara lo que concluye cada análisis.'] },
+  ruido:   { m1: { n: 10, delta: 4, sdC: 12, sdT: 12 }, m2: { k: 4, m: 20, sdB: 4, sdW: 12, effect: 4 },
+             d: ['Mucho ruido: el mismo efecto real, pero con poblaciones muy variables. Observa cómo se solapan las curvas y cuánto se ensancha el intervalo.',
+                 'Mucho ruido entre neuronas de un mismo animal. Medir más neuronas ayuda a promediar este ruido… pero no el ruido entre animales.'] },
+  pocos:   { m1: { n: 4, delta: 4, sdC: 5, sdT: 5 },    m2: { k: 3, m: 40, sdB: 4, sdW: 5, effect: 4 },
+             d: ['Pocos animales: el efecto existe, pero con n = 4 casi nunca se detecta. Repite 500 experimentos y mira la potencia.',
+                 'Pocos animales, muchas neuronas: 3 animales × 40 neuronas por grupo. ¿Son 120 observaciones o 3?'] },
+  pequeno: { m1: { n: 300, delta: 1, sdC: 5, sdT: 5 },  m2: { k: 12, m: 60, sdB: 2, sdW: 5, effect: 1 },
+             d: ['Efecto pequeño con muestra grande: p puede ser muy pequeño aunque las poblaciones casi coincidan. ¿Importa biológicamente una diferencia de 1 punto?',
+                 'Efecto pequeño con muestra grande: 12 animales × 60 neuronas. Compara cuánta certeza dice tener cada análisis.'] },
+  nulo:    { m1: { n: 10, delta: 0, sdC: 5, sdT: 5 },   m2: { k: 4, m: 20, sdB: 4, sdW: 5, effect: 0 },
+             d: ['Sin efecto real: las dos poblaciones son idénticas. Aun así, algunas muestras darán p < α. Repite 500 experimentos para contar cuántas.',
+                 'Sin efecto real: cualquier «significativo» es un falso positivo. Repite 500 experimentos y compara ambos análisis con el α prometido.'] },
+};
+const S = { tab: 'experimentar', mod: 1, alpha: 0.05, seed: 2026, scn: 'base',
+  m1: { ...SCN.base.m1, batch: 0, sim: null }, m2: { ...SCN.base.m2, batch: 0, sim: null } };
+
+const CTL = {
+  1: [
+    { k: 'n', label: 'Tamaño de muestra por grupo', values: NVALS, fmt: v => 'n = ' + v, hint: 'animales en cada grupo' },
+    { k: 'delta', label: 'Diferencia real entre medias', min: 0, max: 10, step: 0.5, fmt: v => 'δ = ' + v, hint: 'μ tratamiento − μ control (ΔF/F, %)' },
+    { k: 'sdC', label: 'Variabilidad del control', sw: '--c-ctrl', min: 2, max: 12, step: 0.5, fmt: v => 'σ = ' + v, hint: 'desviación estándar poblacional' },
+    { k: 'sdT', label: 'Variabilidad del tratamiento', sw: '--c-trt', min: 2, max: 12, step: 0.5, fmt: v => 'σ = ' + v, hint: 'desviación estándar poblacional' },
+  ],
+  2: [
+    { k: 'k', label: 'Animales por grupo', min: 3, max: 12, step: 1, fmt: v => v, hint: 'unidades experimentales independientes' },
+    { k: 'm', label: 'Neuronas medidas por animal', min: 1, max: 60, step: 1, fmt: v => v, hint: 'mediciones repetidas dentro del animal' },
+    { k: 'sdB', label: 'Variabilidad entre animales', min: 0, max: 10, step: 0.5, fmt: v => 'σ = ' + v, hint: 'cuánto difieren las medias de los animales' },
+    { k: 'sdW', label: 'Variabilidad dentro de cada animal', min: 1, max: 12, step: 0.5, fmt: v => 'σ = ' + v, hint: 'cuánto difieren las neuronas de un mismo animal' },
+    { k: 'effect', label: 'Efecto real del tratamiento', min: 0, max: 10, step: 0.5, fmt: v => 'δ = ' + v, hint: '0 = el tratamiento no hace nada' },
+  ],
+};
+const ALPHAS = [0.001, 0.01, 0.05, 0.1];
+
+function buildControls(mod) {
+  const st = S['m' + mod];
+  $('#ctl' + mod).innerHTML = CTL[mod].map(c => {
+    const id = `c${mod}_${c.k}`, v = st[c.k];
+    const attrs = c.values ? `min="0" max="${c.values.length - 1}" step="1" value="${c.values.indexOf(v)}"` : `min="${c.min}" max="${c.max}" step="${c.step}" value="${v}"`;
+    return `<div class="ctl"><label for="${id}"><span>${c.sw ? `<i class="sw" style="background:var(${c.sw})"></i>` : ''}${c.label}</span><output id="${id}_o">${c.fmt(v)}</output></label>
+      <input type="range" id="${id}" data-mod="${mod}" data-k="${c.k}" ${attrs}><div class="hint">${c.hint}</div></div>`;
+  }).join('') + `<div class="ctl"><label><span>Umbral de significación</span><output>α</output></label>
+    <div class="seg" role="radiogroup" aria-label="Umbral de significación alfa">${ALPHAS.map(a =>
+      `<label><input type="radio" name="alpha${mod}" value="${a}" ${a === S.alpha ? 'checked' : ''}>${a}</label>`).join('')}</div>
+    <div class="hint">se rechaza H₀ cuando p &lt; α</div></div>`;
+}
+function syncControls() {
+  for (const mod of [1, 2]) {
+    for (const c of CTL[mod]) {
+      const v = S['m' + mod][c.k], el = $(`#c${mod}_${c.k}`);
+      el.value = c.values ? c.values.indexOf(v) : v;
+      $(`#c${mod}_${c.k}_o`).textContent = c.fmt(v);
+    }
+    $$(`input[name=alpha${mod}]`).forEach(r => r.checked = +r.value === S.alpha);
+  }
+  $$('[data-seed]').forEach(i => i.value = S.seed);
+  $$('#scenarios .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.scn === S.scn));
+  $('#scnDesc').textContent = S.scn ? SCN[S.scn].d[S.mod - 1] : 'Configuración personalizada. Elige un escenario para volver a un punto de referencia.';
+}
+
+/* ---------------- utilidades de gráficos ---------------- */
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0) * (r1 - r0);
+function ticks(lo, hi, target) {
+  const raw = (hi - lo) / target, mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map(m => m * mag).find(s => s >= raw);
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+const jit = i => { const s = Math.sin(i * 12.9898 + 78.233) * 43758.5453; return s - Math.floor(s) - 0.5; };
+const pdf = (x, mu, sd) => Math.exp(-0.5 * ((x - mu) / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI));
+const width = el => Math.max(280, Math.round(el.clientWidth || el.parentElement.clientWidth || 600));
+
+/* ---------------- módulo 1 ---------------- */
+function computeM1() {
+  const { n, delta, sdC, sdT } = S.m1;
+  const smp = NS.sampleTwoGroups(S.seed, { n, muC: MU, delta, sdC, sdT });
+  const w = NS.welch(smp.c, smp.t), es = NS.effectSize(w);
+  return { smp, w, es, dTrue: delta / Math.sqrt((sdC * sdC + sdT * sdT) / 2) };
+}
+function chartM1(R) {
+  const el = $('#chart1'), W = width(el), H = 372, ml = 14, mr = 14, X0 = -15, X1 = 65;
+  const { n, delta, sdC, sdT } = S.m1, muT = MU + delta, x = lin(X0, X1, ml, W - mr);
+  const dTop = 40, dBase = 150, axY = 338;
+  const peak = Math.max(pdf(0, 0, sdC), pdf(0, 0, sdT)), y = v => dBase - v / peak * (dBase - dTop);
+  const curve = (mu, sd) => { let d = ''; for (let v = X0; v <= X1 + 1e-9; v += 0.25) d += (d ? 'L' : 'M') + x(v).toFixed(1) + ' ' + y(pdf(v, mu, sd)).toFixed(1); return d; };
+  const r = n <= 30 ? 4.5 : n <= 100 ? 3.4 : 2.5, jh = n <= 30 ? 9 : 15;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Distribuciones poblacionales de control y tratamiento, y observaciones de la muestra">
+    <defs><clipPath id="cp1"><rect x="${ml}" y="0" width="${W - ml - mr}" height="${H}"/></clipPath></defs>`;
+  for (const t of ticks(X0, X1, W < 480 ? 6 : 9)) s += `<line x1="${x(t)}" x2="${x(t)}" y1="${dTop - 8}" y2="${axY}" stroke="var(--grid)"/><text class="tk" x="${x(t)}" y="${axY + 15}" text-anchor="middle">${t}</text>`;
+  s += `<line x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}" stroke="var(--axis)"/>
+    <text class="tk" x="${W / 2}" y="${H - 3}" text-anchor="middle">Respuesta neuronal por animal (ΔF/F, %)</text>
+    <text class="cap" x="${ml}" y="13">POBLACIÓN · PARÁMETROS REALES</text>
+    <line x1="${ml}" x2="${W - mr}" y1="${dBase}" y2="${dBase}" stroke="var(--axis)"/>
+    <text class="cap" x="${ml}" y="172">MUESTRA · ESTIMACIONES</text><g clip-path="url(#cp1)">`;
+  const pops = [[MU, sdC, '--c-ctrl'], [muT, sdT, '--c-trt']];
+  for (const [mu, sd, c] of pops) s += `<path d="${curve(mu, sd)}L${x(X1)} ${dBase}L${x(X0)} ${dBase}Z" fill="var(${c})" fill-opacity=".14"/><path d="${curve(mu, sd)}" fill="none" stroke="var(${c})" stroke-width="2"/>`;
+  for (const [mu, , c] of pops) s += `<line x1="${x(mu)}" x2="${x(mu)}" y1="${dTop - 6}" y2="${dBase}" stroke="var(${c})" stroke-width="2" stroke-dasharray="5 4"/><line x1="${x(mu)}" x2="${x(mu)}" y1="${dBase}" y2="${axY}" stroke="var(${c})" stroke-width="1.5" stroke-dasharray="3 5" opacity=".55"/>`;
+  s += `</g><text class="halo" x="${x(MU) - 6}" y="${dTop - 12}" text-anchor="end">μ = ${MU}, σ = ${sdC}</text>
+    <text class="halo" x="${x(muT) + 6}" y="${dTop - 12}">μ = ${muT}, σ = ${sdT}</text>`;
+  const rows = [['Control', R.smp.c, R.w.m1, R.w.s1, '--c-ctrl', 214], ['Tratamiento', R.smp.t, R.w.m2, R.w.s2, '--c-trt', 284]];
+  for (const [name, vals, m, sd, c, cy] of rows) {
+    s += `<circle cx="${ml + 5}" cy="${cy - 26}" r="4.5" fill="var(${c})"/><text class="tb halo" x="${ml + 15}" y="${cy - 22}">${name} · n = ${n}</text><g clip-path="url(#cp1)">`;
+    vals.forEach((v, i) => s += `<circle cx="${x(v).toFixed(1)}" cy="${(cy + jit(i + (c === '--c-trt' ? 500 : 0)) * 2 * jh).toFixed(1)}" r="${r}" fill="var(${c})" fill-opacity=".62" stroke="var(--surface)" stroke-width=".8" data-tip="${name}, animal ${i + 1}: ${fx(v)} %"/>`);
+    const wy = cy + jh + 12, xl = x(m - sd), xr = x(m + sd);
+    s += `<line x1="${xl}" x2="${xr}" y1="${wy}" y2="${wy}" stroke="var(--ink)" stroke-width="2"/>
+      <line x1="${x(m)}" x2="${x(m)}" y1="${cy - jh - 6}" y2="${wy + 5}" stroke="var(--ink)" stroke-width="2.5"/></g>`;
+    const right = xr + 150 < W - mr;
+    s += `<text class="halo" x="${right ? xr + 7 : xl - 7}" y="${wy + 4}" text-anchor="${right ? 'start' : 'end'}" data-tip="Media observada ± desviación estándar observada">x̄ = ${fx(m)}, s = ${fx(sd)}</text>`;
+  }
+  el.innerHTML = s + '</svg>';
+}
+function chartDiff(el, rows, trueD, label) {
+  const W = width(el), ml = 12, mr = 12, top = 30, rh = 44, H = top + rows.length * rh + 34;
+  let lo = Math.min(0, trueD, ...rows.map(r => r.lo)), hi = Math.max(0, trueD, ...rows.map(r => r.hi));
+  const span = Math.max(hi - lo, 4); lo -= span * 0.2; hi += span * 0.2;
+  const x = lin(lo, hi, ml, W - mr), axY = H - 26;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">`;
+  const tk = ticks(lo, hi, W < 420 ? 5 : 7), dec = tk.length > 1 && tk[1] - tk[0] < 1 ? 1 : 0;
+  for (const t of tk) s += `<line x1="${x(t)}" x2="${x(t)}" y1="${top - 6}" y2="${axY}" stroke="var(--grid)"/><text class="tk" x="${x(t)}" y="${axY + 15}" text-anchor="middle">${fx(t, dec)}</text>`;
+  s += `<line x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}" stroke="var(--axis)"/>
+    <line x1="${x(0)}" x2="${x(0)}" y1="${top - 8}" y2="${axY}" stroke="var(--ink2)" stroke-width="1.5"/>`;
+  if (trueD === 0) s += `<text class="halo" x="${x(0)}" y="13" text-anchor="middle">0 = diferencia real (H₀ es cierta)</text>`;
+  else s += `<line x1="${x(trueD)}" x2="${x(trueD)}" y1="${top - 8}" y2="${axY}" stroke="var(--ink)" stroke-width="2" stroke-dasharray="5 4"/>
+    <text class="halo" x="${x(0) - 5}" y="13" text-anchor="end">0 (H₀)</text><text class="tb halo" x="${x(trueD) + 5}" y="13">δ real = ${trueD}</text>`;
+  rows.forEach((r, i) => {
+    const ty = top + i * rh + 12, by = ty + 16;
+    s += `<text class="halo" x="${ml}" y="${ty}"><tspan class="tb">${r.label}</tspan> · ${fx(r.est)} · IC 95 % [${fx(r.lo)}, ${fx(r.hi)}]</text>
+      <g data-tip="${esc(r.label)}: ${fx(r.est)}, IC 95 % de ${fx(r.lo)} a ${fx(r.hi)}">
+      <rect x="${x(r.lo)}" y="${by - 9}" width="${Math.max(1, x(r.hi) - x(r.lo))}" height="18" fill="transparent"/>
+      <line x1="${x(r.lo)}" x2="${x(r.hi)}" y1="${by}" y2="${by}" stroke="var(${r.c})" stroke-width="3" stroke-linecap="round"/>
+      <line x1="${x(r.lo)}" x2="${x(r.lo)}" y1="${by - 6}" y2="${by + 6}" stroke="var(${r.c})" stroke-width="2"/>
+      <line x1="${x(r.hi)}" x2="${x(r.hi)}" y1="${by - 6}" y2="${by + 6}" stroke="var(${r.c})" stroke-width="2"/>
+      <circle cx="${x(r.est)}" cy="${by}" r="5.5" fill="var(${r.c})" stroke="var(--surface)" stroke-width="2"/></g>`;
+  });
+  el.innerHTML = s + '</svg>';
+}
+function renderM1() {
+  const R = computeM1(), { w, es } = R, { n, delta, sdC, sdT } = S.m1, sig = w.p < S.alpha;
+  S.m1.res = R;
+  chartM1(R);
+  chartDiff($('#diff1'), [{ label: 'Observada', est: w.diff, lo: w.lo, hi: w.hi, c: '--c-sig' }], delta, 'Diferencia observada con intervalo de confianza frente a la diferencia real');
+  $('#derived1').innerHTML = `Tamaño del efecto real: <b>d = ${fx(R.dTrue)}</b><br>δ dividido por la σ combinada de las dos poblaciones.`;
+  $('#table1').innerHTML = `<thead><tr><th></th><th>Parámetro real<br>(población)</th><th>Estimación<br>(muestra)</th></tr></thead><tbody>
+    <tr><td><i class="sw" style="background:var(--c-ctrl)"></i>Media control</td><td>μ = ${MU}</td><td>x̄ = ${fx(w.m1)}</td></tr>
+    <tr><td><i class="sw" style="background:var(--c-trt)"></i>Media tratamiento</td><td>μ = ${MU + delta}</td><td>x̄ = ${fx(w.m2)}</td></tr>
+    <tr><td><i class="sw" style="background:var(--c-ctrl)"></i>Desv. estándar control</td><td>σ = ${sdC}</td><td>s = ${fx(w.s1)}</td></tr>
+    <tr><td><i class="sw" style="background:var(--c-trt)"></i>Desv. estándar tratamiento</td><td>σ = ${sdT}</td><td>s = ${fx(w.s2)}</td></tr>
+    <tr><td>Diferencia de medias</td><td>δ = ${delta}</td><td>${fx(w.diff)}<small>IC 95 % [${fx(w.lo)}, ${fx(w.hi)}]</small></td></tr>
+    <tr><td>Tamaño del efecto</td><td>d = ${fx(R.dTrue)}</td><td>d = ${fx(es.d)}<small>g de Hedges = ${fx(es.g)}</small></td></tr></tbody>`;
+  $('#test1').innerHTML = `<div class="verdict"><div class="bigp"><small>valor p</small>${fp(w.p)}</div>
+      <span class="badge ${sig ? 'sig' : ''}">${sig ? `p < α = ${S.alpha}: se rechaza H₀` : `p ≥ α = ${S.alpha}: no se rechaza H₀`}</span></div>
+    <div class="kv"><span>t = <b>${fx(w.t)}</b></span><span>grados de libertad <span class="en">(df)</span> = <b>${fx(w.df, 1)}</b></span><span>error estándar <span class="en">(SE)</span> = <b>${fx(w.se)}</b></span></div>
+    <p class="note" style="margin-top:10px">H₀: las dos poblaciones tienen la misma media. El valor p indica qué tan raro sería un |t| así de grande si H₀ fuera cierta; no es la probabilidad de que H₀ sea verdadera.</p>
+    <details class="how"><summary>¿Cómo se calcula?</summary><div class="f">
+      <div>EE = √(s²<sub>C</sub>/n + s²<sub>T</sub>/n) = √(${fx(w.v1)}/${n} + ${fx(w.v2)}/${n}) = ${fx(w.se, 3)}</div>
+      <div>t = (x̄<sub>T</sub> − x̄<sub>C</sub>) / EE = ${fx(w.diff, 3)} / ${fx(w.se, 3)} = ${fx(w.t, 3)}</div>
+      <div>gl = (s²<sub>C</sub>/n + s²<sub>T</sub>/n)² / [ (s²<sub>C</sub>/n)²/(n−1) + (s²<sub>T</sub>/n)²/(n−1) ] = ${fx(w.df, 2)} &nbsp;(Welch–Satterthwaite)</div>
+      <div>p = P(|T<sub>gl</sub>| ≥ ${fx(Math.abs(w.t), 3)}) = ${fp(w.p)}</div>
+      <div>IC 95 % = diferencia ± t<sub>0.975, gl</sub> · EE = ${fx(w.diff, 2)} ± ${fx(w.tcrit, 3)} · ${fx(w.se, 3)}</div>
+      <div>s<sub>combinada</sub> = √[ ((n−1)s²<sub>C</sub> + (n−1)s²<sub>T</sub>) / (2n−2) ] = ${fx(es.sp, 3)}</div>
+      <div>d de Cohen = diferencia / s<sub>combinada</sub> = ${fx(w.diff, 3)} / ${fx(es.sp, 3)} = ${fx(es.d, 3)}</div>
+      <div>g de Hedges = J · d, con J = Γ(ν/2) / (√(ν/2) · Γ((ν−1)/2)) = ${fx(es.J, 4)} y ν = 2n − 2 = ${es.v}</div>
+    </div></details>`;
+  renderSim1();
+  $('#read1').innerHTML = readingM1(R).slice(0, 2).map(t => `<p>${t}</p>`).join('');
+}
+function runSim1() {
+  const { n, delta, sdC, sdT } = S.m1;
+  S.m1.batch++;
+  S.m1.sim = NS.simulateTwoGroups(S.seed, S.m1.batch, { n, delta, sdC, sdT }, REPS);
+  renderSim1();
+}
+function renderSim1() {
+  const el = $('#sim1'), sim = S.m1.sim, { delta } = S.m1;
+  if (!sim) { el.innerHTML = `<div class="empty">Pulsa <b>«Repetir 500 experimentos»</b> para simular 500 laboratorios con estos mismos parámetros y contar cuántos obtienen p &lt; α.<br>${delta === 0 ? 'Como el efecto real es cero, esa proporción estimará la tasa de falsos positivos.' : 'Como existe un efecto real, esa proporción estimará la potencia.'}</div>`; return; }
+  let k = 0, sd = 0; const a = S.alpha;
+  for (let i = 0; i < REPS; i++) if (sim.p[i] < a) { k++; sd += sim.diff[i]; }
+  const wl = NS.wilson(k, REPS), nul = delta === 0;
+  let cells = ''; for (let i = 0; i < REPS; i++) cells += `<i class="${sim.p[i] < a ? 's' : ''}" data-tip="Experimento ${i + 1}: ${pEq(sim.p[i])}"></i>`;
+  el.innerHTML = `<div class="hero-l">${nul ? 'Tasa de falsos positivos estimada <span class="en">(type I error rate)</span>' : 'Potencia estimada <span class="en">(power)</span>'}</div>
+    <div class="hero">${pct(wl.p)}</div>
+    <p class="note"><b>${k} de ${REPS}</b> experimentos con p &lt; α = ${a} · IC 95 % de la simulación (Wilson): ${pct(wl.lo)} – ${pct(wl.hi)} · lote n.º ${S.m1.batch}</p>
+    <div class="waffle" role="img" aria-label="${k} de ${REPS} experimentos significativos">${cells}</div>
+    <div class="legend"><span><i class="lg-dot" style="background:var(--c-sig);border-radius:2px"></i>p &lt; α (${k})</span><span><i class="lg-dot" style="background:var(--grid);border-radius:2px"></i>p ≥ α (${REPS - k})</span><span>Cada cuadro es un experimento completo.</span></div>
+    <h4 style="font-size:13.5px;margin:16px 0 4px">Distribución de los 500 valores p</h4><div class="chart" id="phist"></div>
+    <p class="callout" style="margin-top:12px">${nul
+      ? `<b>No hay efecto real</b>, así que cada cuadro morado es un falso positivo (error tipo I). La prueba promete que ocurran con frecuencia α = ${pct(a, a < 0.01 ? 1 : 0)}; lo estimado es ${pct(wl.p)}.`
+      : `<b>Existe un efecto real</b> (δ = ${delta}), así que la proporción de cuadros morados estima la potencia. Los cuadros grises son falsos negativos (error tipo II): experimentos correctos que no detectaron un efecto que sí existe.`}
+      ${!nul && k >= 5 ? ` Entre los significativos, la diferencia observada promedio fue <b>${fx(sd / k)}</b> frente a δ = ${delta} real${sd / k > delta * 1.15 ? ': cuando la potencia es baja, los resultados que cruzan el umbral tienden a exagerar el efecto' : ''}.` : ''}</p>
+    <p class="note" style="margin-top:10px"><b>Incertidumbre de la simulación:</b> 500 experimentos también son una muestra. La proporción tiene un error de Monte Carlo de aproximadamente √(p(1−p)/500), como máximo ±4.4 puntos porcentuales al 95 %. Pulsa de nuevo para ver cuánto cambia con otro lote; el valor verdadero no cambia, la estimación sí.</p>`;
+  chartPHist($('#phist'), sim.p, a, nul);
+}
+function chartPHist(el, ps, alpha, nul) {
+  const W = width(el), H = 170, ml = 34, mr = 12, top = 22, axY = H - 30, B = 20;
+  const bins = new Array(B).fill(0); for (const p of ps) bins[Math.min(B - 1, Math.floor(p * B))]++;
+  const ymax = Math.max(40, ...bins) * 1.08, x = lin(0, 1, ml, W - mr), y = lin(0, ymax, axY, top), bw = (W - ml - mr) / B;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Histograma de valores p">`;
+  for (const t of ticks(0, ymax, 3)) s += `<line x1="${ml}" x2="${W - mr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)"/><text class="tk" x="${ml - 6}" y="${y(t) + 4}" text-anchor="end">${t}</text>`;
+  bins.forEach((c, i) => { const h = axY - y(c); s += `<g data-tip="p entre ${(i / B).toFixed(2)} y ${((i + 1) / B).toFixed(2)}: ${c} experimentos"><rect x="${ml + i * bw}" y="${top}" width="${bw}" height="${axY - top}" fill="transparent"/>${c ? `<path d="M${ml + i * bw + 1} ${axY}v${-Math.max(0, h - 3)}q0 -3 3 -3h${bw - 8}q3 0 3 3v${Math.max(0, h - 3)}z" fill="var(--muted)"/>` : ''}</g>`; });
+  s += `<line x1="${ml}" x2="${W - mr}" y1="${axY}" y2="${axY}" stroke="var(--axis)"/>`;
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) s += `<text class="tk" x="${x(t)}" y="${axY + 15}" text-anchor="middle">${t}</text>`;
+  s += `<text class="tk" x="${(ml + W - mr) / 2}" y="${H - 2}" text-anchor="middle">valor p</text>
+    <line x1="${ml}" x2="${W - mr}" y1="${y(REPS / B)}" y2="${y(REPS / B)}" stroke="var(--ink2)" stroke-dasharray="4 4"/>
+    <text class="halo" x="${W - mr}" y="${y(REPS / B) - 5}" text-anchor="end">${nul ? 'reparto uniforme esperado (H₀ cierta)' : 'reparto uniforme si H₀ fuera cierta'}</text>
+    <line x1="${x(alpha)}" x2="${x(alpha)}" y1="${top - 10}" y2="${axY}" stroke="var(--c-sig)" stroke-width="2"/>
+    <text class="tb halo" x="${x(alpha) + 5}" y="${top - 2}">α = ${alpha}</text></svg>`;
+  el.innerHTML = s;
+}
+function readingM1(R) {
+  const { w, es } = R, { delta, n } = S.m1, a = S.alpha, sig = w.p < a, covers = w.lo <= delta && delta <= w.hi, out = [];
+  out.push(`Con esta muestra, la diferencia observada es <b>${fx(w.diff)}</b> puntos de ΔF/F (IC 95 %: ${fx(w.lo)} a ${fx(w.hi)}) y ${pEq(w.p)}. Con α = ${a}, ${sig ? 'se rechaza' : 'no se rechaza'} la hipótesis nula.`);
+  if (delta > 0 && sig) out.push(`<b>Acierto (verdadero positivo).</b> El efecto existe (δ = ${delta}) y esta muestra lo detectó. En un laboratorio real no sabrías que es un acierto: solo sabrías que datos así serían raros si no hubiera efecto.`);
+  if (delta > 0 && !sig) out.push(`<b>Falso negativo (error tipo II).</b> El efecto existe (δ = ${delta}), pero esta muestra no lo detectó. Por eso un resultado no significativo no demuestra ausencia de efecto: el intervalo llega hasta ${fx(w.hi)}, así que los datos siguen siendo compatibles con un efecto de ese tamaño.`);
+  if (delta === 0 && sig) out.push(`<b>Falso positivo (error tipo I).</b> Las poblaciones son idénticas y aun así p &lt; α. No hubo ningún error de cálculo: con α = ${a}, esto le ocurre por puro azar a ${pct(a, a < 0.01 ? 1 : 0)} de los experimentos sin efecto.`);
+  if (delta === 0 && !sig) out.push(`<b>Conclusión correcta, pero prudente.</b> No hay efecto real y la prueba no rechazó H₀. Aun así, el laboratorio solo podría decir «no encontramos evidencia de una diferencia»; el intervalo (${fx(w.lo)} a ${fx(w.hi)}) muestra qué efectos no se pueden descartar.`);
+  out.push(`El intervalo de confianza ${covers ? '<b>contiene</b>' : '<b>no contiene</b>'} la diferencia real (δ = ${delta}). ${covers ? 'Eso ocurre en cerca del 95 % de las muestras.' : 'Eso ocurre en cerca del 5 % de las muestras: esta es una de ellas.'} Obtén otras muestras y observa cómo el intervalo se mueve alrededor de δ.`);
+  out.push(`El tamaño del efecto observado es d = ${fx(es.d)} (g = ${fx(es.g)}), frente a d = ${fx(R.dTrue)} real. ${n <= 10 ? `Con n = ${n} por grupo, d es una estimación muy ruidosa.` : ''} ${sig && Math.abs(R.dTrue) < 0.3 && delta > 0 ? 'Aquí el resultado es estadísticamente significativo aunque las dos poblaciones se solapan casi por completo: que una diferencia así importe biológicamente depende del sistema, no del valor p.' : 'Que una diferencia de ese tamaño importe biológicamente es una pregunta sobre el sistema estudiado, no sobre el valor p.'}`);
+  return out;
+}
+
+/* ---------------- módulo 2 ---------------- */
+function designM2() {
+  const { k, m, sdB, sdW } = S.m2, icc = sdB * sdB / (sdB * sdB + sdW * sdW), deff = 1 + (m - 1) * icc;
+  return { icc, deff, neff: k * m / deff, N: k * m };
+}
+function chartM2(G, A) {
+  const el = $('#chart2'), W = width(el), H = 392, ml = 38, mr = 10, top = 46, axY = H - 44;
+  const { k, m, sdB, sdW, effect } = S.m2, tot = Math.sqrt(sdB * sdB + sdW * sdW);
+  const half = Math.max(15, effect / 2 + 3.4 * tot), c0 = MU + effect / 2;
+  const y = lin(c0 - half, c0 + half, axY, top), gap = 22, gw = (W - ml - mr - gap) / 2, cw = gw / k;
+  const r = m * k <= 60 ? 4 : m * k <= 240 ? 3.2 : 2.4;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Neuronas por animal en control y tratamiento">
+    <defs><clipPath id="cp2"><rect x="${ml}" y="${top - 4}" width="${W - ml - mr}" height="${axY - top + 8}"/></clipPath></defs>`;
+  for (const t of ticks(c0 - half, c0 + half, 6)) s += `<line x1="${ml}" x2="${W - mr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)"/><text class="tk" x="${ml - 6}" y="${y(t) + 4}" text-anchor="end">${t}</text>`;
+  s += `<text class="tk" transform="translate(11 ${(top + axY) / 2}) rotate(-90)" text-anchor="middle">Respuesta por neurona (ΔF/F, %)</text>`;
+  const meta = [['Control', '--c-ctrl', MU, A.animal.m1, 'C'], ['Tratamiento', '--c-trt', MU + effect, A.animal.m2, 'T']];
+  G.forEach((animals, g) => {
+    const [name, col, mu, est, pre] = meta[g], gx = ml + g * (gw + gap);
+    s += `<circle cx="${gx + 6}" cy="12" r="4.5" fill="var(${col})"/><text class="tb" x="${gx + 16}" y="16">${name} · ${k} animales</text>
+      <text x="${gx}" y="33">${gw < 250 ? `μ = ${mu} · x̄ = ${fx(est)}` : `μ real = ${mu} · x̄ observada = ${fx(est)}`}</text><g clip-path="url(#cp2)">
+      <line x1="${gx}" x2="${gx + gw}" y1="${y(mu)}" y2="${y(mu)}" stroke="var(--ink2)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+    animals.forEach((an, j) => {
+      const cx = gx + (j + 0.5) * cw, hue = (210 + (g * k + j) * 137.508) % 360, fill = `oklch(var(--animal-l) 0.15 ${hue.toFixed(0)})`;
+      an.values.forEach((v, i) => s += `<circle cx="${(cx + jit(i * 7 + j * 131 + g * 977) * cw * 0.62).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}" style="fill:${fill}" fill-opacity=".7" data-tip="Animal ${pre}${j + 1}, neurona ${i + 1}: ${fx(v)} %"/>`);
+    });
+    s += `<line x1="${gx}" x2="${gx + gw}" y1="${y(est)}" y2="${y(est)}" stroke="var(${col})" stroke-width="2.5"/>`;
+    animals.forEach((an, j) => {
+      const cx = gx + (j + 0.5) * cw;
+      s += `<g data-tip="Animal ${pre}${j + 1}: media de ${m} neurona${m > 1 ? 's' : ''} = ${fx(an.mean)} %"><rect x="${cx - cw * 0.42}" y="${y(an.mean) - 8}" width="${cw * 0.84}" height="16" fill="transparent"/>
+        <line x1="${cx - cw * 0.4}" x2="${cx + cw * 0.4}" y1="${y(an.mean)}" y2="${y(an.mean)}" stroke="var(--surface)" stroke-width="6.5" stroke-linecap="round"/>
+        <line x1="${cx - cw * 0.4}" x2="${cx + cw * 0.4}" y1="${y(an.mean)}" y2="${y(an.mean)}" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/></g>`;
+    });
+    s += '</g>';
+    if (cw >= 21) animals.forEach((_, j) => s += `<text class="tk" x="${gx + (j + 0.5) * cw}" y="${axY + 16}" text-anchor="middle">${pre}${j + 1}</text>`);
+    s += `<line x1="${gx}" x2="${gx + gw}" y1="${axY + 1}" y2="${axY + 1}" stroke="var(--axis)"/><text x="${gx + gw / 2}" y="${axY + 34}" text-anchor="middle">${name}</text>`;
+  });
+  el.innerHTML = s + '</svg>';
+}
+function renderM2() {
+  const { k, m, sdB, sdW, effect } = S.m2;
+  const G = NS.sampleNested(S.seed, { k, m, muC: MU, effect, sdB, sdW }), A = NS.analyzeNested(G), D = designM2(), a = S.alpha;
+  S.m2.res = { G, A, D };
+  chartM2(G, A);
+  chartDiff($('#diff2'), [
+    { label: `Ingenuo (n = ${D.N} neuronas)`, est: A.naive.diff, lo: A.naive.lo, hi: A.naive.hi, c: '--c-naive' },
+    { label: `Por animal (n = ${k} animales)`, est: A.animal.diff, lo: A.animal.lo, hi: A.animal.hi, c: '--c-animal' }], effect, 'Diferencia e intervalo de confianza según cada análisis');
+  $('#derived2').innerHTML = `Correlación intraclase <span class="en">(ICC)</span>: <b>${fx(D.icc)}</b><br>Efecto de diseño <span class="en">(design effect)</span>: <b>${fx(D.deff, 1)}</b><br>
+    Las ${D.N} neuronas de cada grupo aportan la información de unas <b>${fx(D.neff, 1)}</b> observaciones independientes.`;
+  const row = (l, f) => `<tr><td>${l}</td><td>${f(A.naive)}</td><td>${f(A.animal)}</td></tr>`;
+  $('#table2').innerHTML = `<thead><tr><th></th><th><i class="sw" style="background:var(--c-naive)"></i>Ingenuo<br>cada neurona</th><th><i class="sw" style="background:var(--c-animal)"></i>Por animal<br>medias</th></tr></thead><tbody>
+    ${row('n por grupo', w => w.n1)}${row('Diferencia', w => fx(w.diff))}${row('Error estándar <span class="en">(SE)</span>', w => fx(w.se))}
+    ${row('t', w => fx(w.t))}${row('Grados de libertad', w => fx(w.df, 1))}${row('IC 95 %', w => `[${fx(w.lo)}, ${fx(w.hi)}]`)}
+    ${row('Valor p', w => `<b>${fp(w.p)}</b>`)}${row(`Decisión (α = ${a})`, w => w.p < a ? 'rechaza H₀' : 'no rechaza H₀')}</tbody>`;
+  renderSim2();
+  $('#read2').innerHTML = readingM2().slice(0, 2).map(t => `<p>${t}</p>`).join('');
+}
+function runSim2() {
+  const { k, m, sdB, sdW, effect } = S.m2;
+  S.m2.batch++;
+  S.m2.sim = NS.simulateNested(S.seed, S.m2.batch, { k, m, sdB, sdW, effect }, REPS);
+  renderSim2();
+}
+function hbar(label, col, wl, ref) {
+  return `<div class="hb"><div class="hl"><span><i class="sw" style="background:var(${col})"></i>${label}</span><span>${pct(wl.p)} · IC 95 % ${pct(wl.lo)} – ${pct(wl.hi)}</span></div>
+    <div class="track" data-tip="${esc(label)}: ${pct(wl.p)} (IC 95 % ${pct(wl.lo)} – ${pct(wl.hi)})"><div class="fill" style="width:${100 * wl.p}%;background:var(${col})"></div>
+    <div class="ci" style="left:${100 * wl.lo}%;width:${100 * (wl.hi - wl.lo)}%"></div>${ref != null ? `<div class="ref" style="left:${100 * ref}%"></div>` : ''}</div></div>`;
+}
+function renderSim2() {
+  const el = $('#sim2'), sim = S.m2.sim, { effect, k, m } = S.m2, a = S.alpha, nul = effect === 0;
+  if (!sim) { el.innerHTML = `<div class="empty">Pulsa <b>«Repetir 500 experimentos»</b> para simular 500 laboratorios con este diseño y analizar cada uno de las dos formas.<br>${nul ? 'Sin efecto real, la proporción de p &lt; α es la tasa de falsos positivos de cada análisis.' : 'Con efecto real, compara cuántas veces cada análisis obtiene p &lt; α.'}</div>`; return; }
+  let kn = 0, ka = 0; for (let i = 0; i < REPS; i++) { if (sim.pN[i] < a) kn++; if (sim.pA[i] < a) ka++; }
+  const wn = NS.wilson(kn, REPS), wa = NS.wilson(ka, REPS);
+  el.innerHTML = `<div class="hero-l">${nul ? 'Tasa de falsos positivos estimada en 500 experimentos sin efecto real' : `Proporción de experimentos con p < α (efecto real δ = ${effect})`}</div>
+    ${hbar(`Análisis ingenuo: ${kn} de ${REPS}`, '--c-naive', wn, nul ? a : null)}${hbar(`Análisis por animal: ${ka} de ${REPS}`, '--c-animal', wa, nul ? a : null)}
+    ${nul ? `<div class="legend"><span><i class="lg-dash" style="border-color:var(--ink2)"></i>α nominal = ${pct(a, a < 0.01 ? 1 : 0)}: la tasa que la prueba promete</span></div>` : ''}
+    <p class="callout" style="margin-top:12px">${nul
+      ? (m === 1 ? 'Con una sola neurona por animal, ambos análisis coinciden: no hay pseudorreplicación posible.' : `El análisis ingenuo declara un efecto que no existe en <b>${pct(wn.p)}</b> de los experimentos, cuando promete ${pct(a, a < 0.01 ? 1 : 0)}. El análisis por animal se mantiene cerca de lo prometido (${pct(wa.p)}). Sube las neuronas por animal y repite: el problema empeora.`)
+      : `El análisis ingenuo parece «más potente» (${pct(wn.p)} frente a ${pct(wa.p)}), pero solo porque también da significativo cuando no hay efecto: pon el efecto en 0 y compruébalo. Una prueba que no controla los falsos positivos no tiene una potencia interpretable. La potencia honesta de este diseño es la del análisis por animal: <b>${pct(wa.p)}</b>.`}</p>
+    <p class="note" style="margin-top:10px"><b>Incertidumbre de la simulación:</b> cada proporción proviene de 500 experimentos simulados (lote n.º ${S.m2.batch}) y tiene error de Monte Carlo; la barra negra es su IC 95 % de Wilson. Pulsa de nuevo para ver cuánto varía.</p>`;
+}
+function readingM2() {
+  const { A, D } = S.m2.res, { k, m, effect } = S.m2, a = S.alpha, sn = A.naive.p < a, sa = A.animal.p < a, out = [];
+  out.push(`Los dos análisis estiman casi la misma diferencia (${fx(A.naive.diff)}), pero el ingenuo usa n = ${D.N} por grupo y obtiene un error estándar de ${fx(A.naive.se)}; el análisis por animal usa n = ${k} y obtiene ${fx(A.animal.se)}. Resultado: ${pEq(A.naive.p)} frente a ${pEq(A.animal.p)}.`);
+  if (m === 1) out.push('Con una neurona por animal, cada neurona <b>es</b> un animal: los dos análisis son el mismo y no hay pseudorreplicación.');
+  else if (sn && !sa) out.push(effect === 0
+    ? `<b>Los análisis discrepan, y el ingenuo se equivoca.</b> No hay efecto real: su «significativo» es un falso positivo causado por contar ${D.N} neuronas como si fueran ${D.N} animales.`
+    : `<b>Los análisis discrepan.</b> El efecto existe (δ = ${effect}) y el ingenuo «acierta», pero por una razón equivocada: su error estándar ignora la variabilidad entre animales. Con ${k} animales, el diseño no tiene información suficiente para afirmarlo con este α.`);
+  else if (sn && sa) out.push(effect === 0 ? '<b>Ambos dan significativo sin efecto real:</b> un falso positivo que también engañó al análisis correcto. Le ocurre a una fracción α de los experimentos.' : '<b>Ambos detectan el efecto.</b> Observa, aun así, cuánto más estrecho es el intervalo del análisis ingenuo: promete una precisión que los datos no tienen.');
+  else out.push(`<b>Ninguno rechaza H₀.</b> ${effect === 0 ? 'Correcto esta vez; repite 500 experimentos para ver con qué frecuencia el ingenuo falla.' : `El efecto existe (δ = ${effect}) y no se detectó: falta potencia, y la potencia aquí depende sobre todo del número de animales.`}`);
+  out.push(`La correlación intraclase es ICC = ${fx(D.icc)}: ${pct(D.icc, 0)} de la variabilidad total se debe a diferencias entre animales. Por eso las ${D.N} neuronas de cada grupo equivalen a unas ${fx(D.neff, 1)} observaciones independientes (${D.N} / efecto de diseño ${fx(D.deff, 1)}).`);
+  out.push(`Medir más neuronas por animal solo afina la media de <i>ese</i> animal; la incertidumbre sobre cómo difieren los animales entre sí solo se reduce añadiendo animales. La unidad experimental es aquello que recibió el tratamiento de forma independiente: aquí, el animal.`);
+  return out;
+}
+
+/* ---------------- interpretar ---------------- */
+function renderInterpret() {
+  const m1 = S.mod === 1;
+  const txt = m1 ? readingM1(S.m1.res) : readingM2();
+  const qs = m1 ? ['Si este fuera tu experimento, ¿cuántos animales necesitarías para detectar el efecto 8 de cada 10 veces?', '¿Qué diferencia mínima tendría consecuencias biológicas en tu sistema? ¿El intervalo de confianza la incluye o la descarta?', '¿Qué parte de la variabilidad podrías reducir con el diseño (mismas condiciones de registro, animales de la misma edad)?']
+    : ['En tu diseño, ¿qué unidad recibió el tratamiento de forma independiente: la neurona, el corte, el animal, la camada?', 'Con el presupuesto de un experimento más, ¿conviene registrar más neuronas por animal o añadir animales?', '¿Reportas n como número de neuronas o de animales? ¿Coincide con la unidad que usó la prueba estadística?'];
+  $('#fullReading').innerHTML = `<span class="eyebrow">Tu experimento actual · módulo ${S.mod}: ${m1 ? 'comparar dos grupos' : 'pseudorreplicación'} · semilla ${S.seed}</span>
+    <h3 style="font-size:18px;margin:6px 0 10px">Lectura del resultado</h3>${txt.map(t => `<p>${t}</p>`).join('')}
+    <h3 style="font-size:15px;margin:16px 0 6px">Conecta con el diseño experimental</h3><ul style="margin:0;padding-left:18px">${qs.map(q => `<li>${q}</li>`).join('')}</ul>
+    <p style="margin-top:12px"><button class="btn small" data-tabgo="experimentar">← Volver al experimento</button></p>`;
+}
+const power = (P, reps, alpha = 0.05) => { const r = NS.simulateTwoGroups(777, 1, P, reps); let k = 0; for (const p of r.p) if (p < alpha) k++; return k / reps; };
+const nested = (P, reps, alpha = 0.05) => { const r = NS.simulateNested(777, 1, P, reps); let kn = 0, ka = 0; for (let i = 0; i < reps; i++) { if (r.pN[i] < alpha) kn++; if (r.pA[i] < alpha) ka++; } return { naive: kn / reps, animal: ka / reps }; };
+const RETOS = [
+  { q: '¿Qué ocurrirá con la potencia si duplicas el número de animales (de 10 a 20 por grupo) manteniendo el efecto (δ = 4) y la variabilidad (σ = 5)?',
+    o: ['Se duplica exactamente', 'Aumenta, pero no en proporción fija', 'No cambia: el efecto es el mismo'], ok: 1,
+    run() { const a = power({ n: 10, delta: 4, sdC: 5, sdT: 5 }, 2000), b = power({ n: 20, delta: 4, sdC: 5, sdT: 5 }, 2000); return `Potencia con n = 10: <b>${pct(a)}</b> → con n = 20: <b>${pct(b)}</b>`; },
+    why: 'Más animales reducen el error estándar en proporción a 1/√n, así que la potencia sube, pero no de forma lineal: depende de dónde partas y nunca supera el 100 %. Duplicar n cuando la potencia ya es alta casi no aporta.',
+    load: { mod: 1, m1: { n: 20, delta: 4, sdC: 5, sdT: 5 } } },
+  { q: 'Dos poblaciones idénticas (sin efecto real), α = 0.05, n = 10. Si 500 laboratorios repiten el experimento, ¿cuántos obtendrán p < 0.05?',
+    o: ['Ninguno: no hay nada que encontrar', 'Alrededor de 25', 'Alrededor de 250'], ok: 1,
+    run() { const r = NS.simulateTwoGroups(777, 2, { n: 10, delta: 0, sdC: 5, sdT: 5 }, 500); let k = 0; for (const p of r.p) if (p < 0.05) k++; return `Laboratorios con p &lt; 0.05: <b>${k} de 500</b> (${pct(k / 500)})`; },
+    why: 'α es precisamente la frecuencia de falsos positivos que aceptas cuando la hipótesis nula es cierta: 5 % de 500 son unos 25. Si solo esos 25 publican, la literatura se llena de efectos inexistentes.',
+    load: { mod: 1, m1: { n: 10, delta: 0, sdC: 5, sdT: 5 } } },
+  { q: 'Sin efecto real, 4 animales por grupo. Analizas cada neurona como independiente. Si pasas de medir 5 a medir 50 neuronas por animal, ¿qué ocurre con los falsos positivos de ese análisis?',
+    o: ['Bajan: más datos, menos error', 'Se mantienen cerca de 5 %', 'Suben'], ok: 2,
+    run() { const P = { k: 4, sdB: 4, sdW: 5, effect: 0 }, a = nested({ ...P, m: 5 }, 2000), b = nested({ ...P, m: 50 }, 2000); return `Falsos positivos del análisis ingenuo: <b>${pct(a.naive)}</b> con 5 neuronas → <b>${pct(b.naive)}</b> con 50.<br>Análisis por animal: ${pct(a.animal)} → ${pct(b.animal)}`; },
+    why: 'Cada neurona adicional hace creer al análisis ingenuo que tiene más información independiente, y su error estándar se encoge. Pero la diferencia entre grupos causada por el azar de qué animales tocaron en cada grupo sigue ahí. Más neuronas, más certeza falsa.',
+    load: { mod: 2, m2: { k: 4, m: 50, sdB: 4, sdW: 5, effect: 0 } } },
+  { q: 'Puedes registrar 120 neuronas por grupo y existe un efecto real (δ = 6). ¿Qué diseño tiene más potencia con el análisis por animal?',
+    o: ['3 animales × 40 neuronas', '12 animales × 10 neuronas', 'Igual: son 120 neuronas en ambos'], ok: 1,
+    run() { const P = { sdB: 4, sdW: 5, effect: 6 }, a = nested({ ...P, k: 3, m: 40 }, 2000), b = nested({ ...P, k: 12, m: 10 }, 2000); return `Potencia (análisis por animal): 3 × 40 → <b>${pct(a.animal)}</b>; 12 × 10 → <b>${pct(b.animal)}</b>`; },
+    why: 'El mismo número de neuronas repartido entre más animales contiene mucha más información independiente. Medir más neuronas no equivale a añadir más animales.',
+    load: { mod: 2, m2: { k: 12, m: 10, sdB: 4, sdW: 5, effect: 6 } } },
+];
+const QUIZ = [
+  { s: '«Obtuve p = 0.03, así que hay un 3 % de probabilidad de que la hipótesis nula sea cierta.»', ok: false,
+    why: 'El valor p se calcula suponiendo que la hipótesis nula es cierta; no puede medir la probabilidad de esa misma suposición. Dice: «si no hubiera efecto, datos tan extremos aparecerían 3 de cada 100 veces».' },
+  { s: '«p = 0.40: queda demostrado que el tratamiento no tiene efecto.»', ok: false,
+    why: 'Un resultado no significativo no demuestra ausencia de efecto. Con poca potencia, los efectos reales pasan desapercibidos casi siempre. Mira el intervalo de confianza: indica qué efectos siguen siendo compatibles con los datos.' },
+  { s: '«p < 0.001: el efecto es grande e importante biológicamente.»', ok: false,
+    why: 'El valor p mezcla tamaño del efecto y tamaño de muestra. Con n enorme, una diferencia trivial da p diminutos. La magnitud se lee en la diferencia, su intervalo y el tamaño del efecto; la importancia, en la biología.' },
+  { s: '«Registré 50 neuronas en cada uno de 3 ratones por grupo; mi n es 150.»', ok: false,
+    why: 'Si el tratamiento se aplicó al ratón, hay 3 unidades experimentales por grupo. Las 50 neuronas de un ratón comparten todo lo que hace único a ese ratón; contarlas como independientes es pseudorreplicación.' },
+  { s: '«Si repitiera el experimento muchas veces, cerca del 95 % de los IC del 95 % contendrían la diferencia real.»', ok: true,
+    why: 'Esa es la interpretación correcta: el 95 % describe la fiabilidad del procedimiento a largo plazo, no la probabilidad de que un intervalo concreto contenga el valor real.' },
+];
+function buildInterpretStatic() {
+  $('#retos').innerHTML = RETOS.map((r, i) => `<article class="card reto" data-reto="${i}"><span class="eyebrow">Reto ${i + 1}</span><p style="margin-top:6px;font-weight:600">${r.q}</p>
+    <div class="opts">${r.o.map((o, j) => `<button class="opt" data-o="${j}" aria-pressed="false"><span class="mk">${'ABC'[j]}</span><span>${o}</span></button>`).join('')}</div>
+    <button class="btn primary small" data-run disabled>Simular y comprobar</button><div class="fbslot"></div></article>`).join('');
+  $('#quiz').innerHTML = QUIZ.map((q, i) => `<article class="card" data-quiz="${i}"><p style="font-weight:600">${q.s}</p>
+    <div class="tf"><button class="btn small" data-a="1">Verdadero</button><button class="btn small" data-a="0">Falso</button></div><div class="fbslot"></div></article>`).join('');
+}
+document.addEventListener('click', e => {
+  const opt = e.target.closest('.opt');
+  if (opt && !opt.disabled) { const card = opt.closest('.reto'); $$('.opt', card).forEach(b => b.setAttribute('aria-pressed', b === opt)); $('[data-run]', card).disabled = false; return; }
+  const run = e.target.closest('[data-run]');
+  if (run) {
+    const card = run.closest('.reto'), r = RETOS[+card.dataset.reto], pick = $$('.opt', card).findIndex(b => b.getAttribute('aria-pressed') === 'true'), good = pick === r.ok;
+    $$('.opt', card).forEach((b, j) => { b.disabled = true; if (j === r.ok) { b.classList.add('ok'); b.querySelector('.mk').textContent = '✓'; } else if (j === pick) { b.classList.add('ko'); b.querySelector('.mk').textContent = '✗'; } });
+    run.hidden = true;
+    $('.fbslot', card).innerHTML = `<div class="fb"><div class="res ${good ? 'ok' : 'ko'}">${good ? '✓ Tu predicción coincide con la simulación' : '✗ La simulación muestra otra cosa'}</div><div class="nums">${r.run()}</div><p>${r.why}</p>
+      <button class="btn small" data-load="${card.dataset.reto}">Explorarlo en el simulador →</button></div>`;
+    return;
+  }
+  const ld = e.target.closest('[data-load]');
+  if (ld) { const L = RETOS[+ld.dataset.load].load; S.mod = L.mod; Object.assign(S['m' + L.mod], L['m' + L.mod], { sim: null }); S.scn = null; S.alpha = 0.05; setTab('experimentar'); (L.mod === 1 ? runSim1 : runSim2)(); return; }
+  const qa = e.target.closest('[data-a]');
+  if (qa) { const card = qa.closest('[data-quiz]'), q = QUIZ[+card.dataset.quiz], good = (qa.dataset.a === '1') === q.ok;
+    $$('[data-a]', card).forEach(b => b.disabled = true);
+    $('.fbslot', card).innerHTML = `<div class="fb"><div class="res ${good ? 'ok' : 'ko'}">${good ? '✓ Correcto' : '✗ No exactamente'}: la afirmación es ${q.ok ? 'verdadera' : 'falsa'}</div><p>${q.why}</p></div>`; }
+});
+
+/* ---------------- navegación y eventos ---------------- */
+function render() {
+  $('#mod1').hidden = S.mod !== 1; $('#mod2').hidden = S.mod !== 2;
+  $$('.modsw button').forEach(b => b.setAttribute('aria-selected', +b.dataset.mod === S.mod));
+  syncControls();
+  // Ambos módulos se calculan siempre (es barato) para que «Interpretar» tenga datos; solo se dibuja el visible.
+  if (S.tab === 'experimentar') { S.mod === 1 ? renderM1() : renderM2(); }
+  else { if (S.mod === 1) S.m1.res = computeM1(); else { const { k, m, sdB, sdW, effect } = S.m2; const G = NS.sampleNested(S.seed, { k, m, muC: MU, effect, sdB, sdW }); S.m2.res = { G, A: NS.analyzeNested(G), D: designM2() }; } }
+  if (S.tab === 'interpretar') renderInterpret();
+}
+function setTab(t) {
+  const go = () => { S.tab = t; for (const v of ['aprender', 'experimentar', 'interpretar']) $('#view-' + v).hidden = v !== t;
+    $$('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t)); render(); window.scrollTo(0, 0); };
+  if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(go); else go();
+}
+function applyScenario(id) { S.scn = id; Object.assign(S.m1, SCN[id].m1, { sim: null }); Object.assign(S.m2, SCN[id].m2, { sim: null }); }
+
+buildControls(1); buildControls(2); buildInterpretStatic();
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.matches('input[type=range][data-k]')) {
+    const mod = +t.dataset.mod, c = CTL[mod].find(c => c.k === t.dataset.k), st = S['m' + mod];
+    st[c.k] = c.values ? c.values[+t.value] : +t.value; st.sim = null; S.scn = null; render();
+  } else if (t.matches('input[name^=alpha]')) { S.alpha = +t.value; render(); }
+});
+document.addEventListener('change', e => {
+  if (e.target.matches('[data-seed]')) { S.seed = Math.min(999999, Math.max(1, Math.round(+e.target.value) || 1)); S.m1.sim = S.m2.sim = null; render(); }
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.tab) setTab(b.dataset.tab);
+  else if (b.dataset.tabgo) setTab(b.dataset.tabgo);
+  else if (b.dataset.mod && b.closest('.modsw')) { S.mod = +b.dataset.mod; render(); }
+  else if (b.dataset.scn) { applyScenario(b.dataset.scn); render(); }
+  else if (b.dataset.act === 'resample') { S.seed = S.seed >= 999999 ? 1 : S.seed + 1; S.m1.sim = S.m2.sim = null; render(); }
+  else if (b.dataset.act === 'sim') { (S.mod === 1 ? runSim1 : runSim2)(); $(S.mod === 1 ? '#sim1' : '#sim2').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  else if (b.dataset.go) { const [mod, scn, sim] = b.dataset.go.split(':'); S.mod = +mod; applyScenario(scn); setTab('experimentar'); if (sim) (S.mod === 1 ? runSim1 : runSim2)(); }
+  else if (b.id === 'themeBtn') { const root = document.documentElement, dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; root.dataset.theme = dark ? 'light' : 'dark'; }
+});
+/* tooltip */
+const tip = $('#tip');
+function showTip(e) {
+  const el = e.target.closest && e.target.closest('[data-tip]');
+  if (!el) { tip.hidden = true; return; }
+  tip.textContent = el.dataset.tip; tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  tip.style.left = Math.max(6, Math.min(innerWidth - r.width - 6, e.clientX - r.width / 2)) + 'px';
+  tip.style.top = (e.clientY - r.height - 14 < 6 ? e.clientY + 18 : e.clientY - r.height - 14) + 'px';
+}
+document.addEventListener('pointermove', showTip); document.addEventListener('pointerdown', showTip);
+document.addEventListener('scroll', () => tip.hidden = true, { passive: true });
+/* redibujar al cambiar el ancho */
+let lastW = 0, raf = 0;
+new ResizeObserver(() => { const w = $('main').clientWidth; if (w === lastW) return; lastW = w; cancelAnimationFrame(raf); raf = requestAnimationFrame(render); }).observe($('main'));
+/* autocomprobación */
+try {
+  const ref = JSON.parse($('#ns-ref').textContent), t = NS.selfTest(ref), ok = t.maxErr < 1e-8;
+  $('#selftest').innerHTML = `<b style="color:var(${ok ? '--good-ink' : '--bad'})">${ok ? '✓ Verificado' : '✗ Discrepancia'}</b> contra SciPy ${ref.scipy}: ${t.rows.length} valores (t, grados de libertad, p, intervalos, cuantiles) con error relativo máximo ${t.maxErr.toExponential(1)}.
+    <details class="how"><summary>Ver la comparación</summary><div class="tablewrap"><table class="st"><thead><tr><th>Caso</th><th>Valor</th><th>NeuroStat</th><th>SciPy</th><th>Error rel.</th></tr></thead><tbody>
+    ${t.rows.map(r => `<tr><td>${esc(r.caso)}</td><td>${r.q}</td><td>${r.ours.toPrecision(10)}</td><td>${r.ref.toPrecision(10)}</td><td>${r.err.toExponential(1)}</td></tr>`).join('')}</tbody></table></div></details>`;
+} catch (err) { $('#selftest').textContent = 'No se pudo ejecutar la autocomprobación: ' + err.message; }
+/* estado inicial opcional en la URL, p. ej. NeuroStat.html#mod=2&esc=nulo&sim&tab=interpretar */
+const H0 = new URLSearchParams(location.hash.slice(1));
+if (SCN[H0.get('esc')]) applyScenario(H0.get('esc'));
+if (H0.get('mod') === '2') S.mod = 2;
+if (H0.has('sim')) { S.mod === 1 ? (S.m1.batch++, S.m1.sim = NS.simulateTwoGroups(S.seed, S.m1.batch, S.m1, REPS)) : (S.m2.batch++, S.m2.sim = NS.simulateNested(S.seed, S.m2.batch, S.m2, REPS)); }
+if (['aprender', 'interpretar'].includes(H0.get('tab'))) { S.tab = H0.get('tab'); for (const v of ['aprender', 'experimentar', 'interpretar']) $('#view-' + v).hidden = v !== S.tab; $$('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab)); }
+render();
+})();
+</script>
+</body>
+</html>
