@@ -1,7 +1,7 @@
-// Verifica el núcleo estadístico de NeuroStat.html contra SciPy/statsmodels.
+// Verifica el núcleo estadístico de index.html contra SciPy/statsmodels.
 // Uso: node verificacion/verificar.js   (desde la carpeta neurostat)
 const fs = require('fs'), path = require('path');
-const html = fs.readFileSync(path.join(__dirname, '..', 'NeuroStat.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const core = html.match(/<script id="ns-core">([\s\S]*?)<\/script>/)[1];
 const m = { exports: {} }; new Function('module', core)(m); const NS = m.exports;
 const ref = JSON.parse(fs.readFileSync(path.join(__dirname, 'referencia.json'), 'utf8'));
